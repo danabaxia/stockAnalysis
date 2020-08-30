@@ -1,0 +1,11 @@
+financials/balance-sheet-statement 
+  - totalCurrentAssets 
+  - totalCurrentLiabilities
+  - totalLiabilities
+  - totalAssets 
+  - totalStockholdersEquity
+
+financials/income-statement 
+  - Net Income
+  - revenue 
+  
