@@ -41,6 +41,8 @@ def requestProfile(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/profile/' + tker + '?apikey=' + key)
     return r.json()
 
+#====================================================================
+#Get company financial data
 def get_revenue(tker, freq):
     return pd.DataFrame(requestIncome(tker, freq))['revenue'].loc[0]
 
@@ -110,10 +112,14 @@ def get_stockList():
 #print(get_stockList())    
 """
 #=============================================================
-#requerst historical stock price
+#requerst historical and current stock price
 def requestHistoryStockPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
     return r.json()['historical']
+
+def requestCurrentPrice(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/quote-short/' + tker + '?apikey=' + key)
+    return r.json()[0]['price']
 
 def getPriceAverage(tker, day):
     history = requestHistoryStockPrice(tker)
@@ -129,6 +135,12 @@ def getPriceAverage(tker, day):
         i+=1
     return total/day
 
+def getPriceCurrent(tker):
+    return requestCurrentPrice(tker)
 
+def getPricePercent(tker, day): 
+    return "{:.2f}".format((getPriceCurrent(tker) - getPriceAverage(tker,day))/getPriceAverage(tker,day)*100)
+
+#historical volatility 
 #===============================
-print(getPriceAverage('AAPL',10))
+print(getPricePercent('TSLA',90))
