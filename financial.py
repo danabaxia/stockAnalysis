@@ -22,22 +22,24 @@ def requestIncome(tker,period):
     if period == 'quarter':
         r = requests.get('https://financialmodelingprep.com/api/v3/income-statement/' + tker + '?period=quarter&apikey=' + key)
     return r.json()
- 
-#df = pd.DataFrame(requestIncome('AAPL')[:2])
-
-
 
 def requestBalance(tker, period):
     if period == 'quarter':
         r = requests.get('https://financialmodelingprep.com/api/v3/balance-sheet-statement/' + tker + '?period=quarter&apikey=' + key)
     return r.json()
 
-#df = pd.DataFrame(requestBalance('AAPL'))
-
 def requestAllStocks():
     r = requests.get('https://financialmodelingprep.com/api/v3/stock/list?apikey=' + key)
     return r.json()
 
+def requestRatio(tker, period):
+    if period == 'quarter':
+        r = requests.get('https://financialmodelingprep.com/api/v3/ratios/' + tker + '?period=quarter&apikey=' +key)
+    return r.json()
+
+def requestProfile(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/profile/' + tker + '?apikey=' + key)
+    return r.json()
 
 def get_revenue(tker, freq):
     return pd.DataFrame(requestIncome(tker, freq))['revenue'].loc[0]
@@ -60,24 +62,63 @@ def get__totalLiabilities(tker, freq):
 def get_shareHolderEquity(tker, freq):
     return pd.DataFrame(requestBalance(tker, freq))['totalStockholdersEquity'].loc[0]
 
-def cal_ROS(tker,freq):
-    return get_netIncome(tker,freq)/get_revenue(tker,freq)*100
+#====================================================================================
+#company financials ratios
 
-def cal_currentLiabilitiesRatio(tker, freq):
-    return get__totalLiabilities(tker,freq)/get_totalAsset(tker,freq)*100
+def get_currentRatio(tker, freq):
+    return pd.DataFrame(requestRatio(tker,freq))['currentRatio'].loc[0]
 
-def cal_currentRatio(tker, freq):
-    return get_currentAsset(tker,freq)/get_totalCurrentLiabilities(tker,freq)*100
+def get_debtEquityRatio(tker, freq):
+    return pd.DataFrame(requestRatio(tker,freq))['debtEquityRatio'].loc[0]
 
-def cal_ROE(tker, freq):
-    return get_netIncome(tker, freq)/get_shareHolderEquity(tker, freq)*100
+def get_returnOnEquity(tker,freq):
+    return pd.DataFrame(requestRatio(tker,freq))['returnOnEquity'].loc[0]
+
+#also called operating profit margin
+def get_ROS(tker,freq):
+    return pd.DataFrame(requestRatio(tker,freq))['operatingProfitMargin'].loc[0]
+
+def get_currentLiabilitiesRatio(tker, freq):
+    return get_totalCurrentLiabilities(tker,freq)/get_currentAsset(tker,freq)
+
+def get_debtRatio(tker, freq):
+    return pd.DataFrame(requestRatio(tker,freq))['debtRatio'].loc[0]
+
+#====================================================================
+#stock profile functions
+def get_profileIndustry(tker):
+    return pd.DataFrame(requestProfile(tker))['industry'].loc[0]
+
+def get_profileSector(tker):
+    return pd.DataFrame(requestProfile(tker))['sector'].loc[0]
+
+def get_profileFiftytwoWeeksRange(tker):
+    return pd.DataFrame(requestProfile(tker))['range'].loc[0]
+
+"""
+#stocks sorting
+def get_stockList(): 
+    df = pd.DataFrame(requestAllStocks())
+    #iterate all stocks
+    for ind in df.index:
+        stock = df['symbol'][ind]
+        #print(stock, get_profileIndustry(stock))
+   
 
 
-#Test
-print(get_currentAsset('AAPL', 'quarter'))
-print(get_totalAsset('AAPL', 'quarter'))
-print(get_totalCurrentLiabilities('AAPL', 'quarter'))
-print(get__totalLiabilities('AAPL', 'quarter'))
-print(get_shareHolderEquity('AAPL', 'quarter'))
-print(cal_currentRatio('AAPL', 'quarter'))
-print(cal_ROE('AAPL', 'quarter'))
+
+#print(get_stockList())    
+"""
+#=============================================================
+#requerst historical stock price
+def requestHistoryStockPrice(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
+    return r.json()['historical']
+
+def getPriceCurrent(tker):
+    return pd.DataFrame(getPriceCurrent(tker)['close'])
+
+
+#===============================
+
+print(len(getPriceCurrent('AAPL')))
