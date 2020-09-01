@@ -28,10 +28,6 @@ def requestBalance(tker, period):
         r = requests.get('https://financialmodelingprep.com/api/v3/balance-sheet-statement/' + tker + '?period=quarter&apikey=' + key)
     return r.json()
 
-def requestAllStocks():
-    r = requests.get('https://financialmodelingprep.com/api/v3/stock/list?apikey=' + key)
-    return r.json()
-
 def requestRatio(tker, period):
     if period == 'quarter':
         r = requests.get('https://financialmodelingprep.com/api/v3/ratios/' + tker + '?period=quarter&apikey=' +key)
@@ -97,6 +93,36 @@ def get_profileSector(tker):
 def get_profileFiftytwoWeeksRange(tker):
     return pd.DataFrame(requestProfile(tker))['range'].loc[0]
 
+#====================================================================
+#Market profle
+def requestAllStocks():
+    r = requests.get('https://financialmodelingprep.com/api/v3/stock/list?apikey=' + key)
+    return r.json()
+
+def requestSectorPerformance():
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-sectors-performance?apikey=' + key)
+    return r.json()
+#sectors:
+#  "utilitiesChangesPercentage" 
+#  "basicMaterialsChangesPercentage" 
+#  "communicationServicesChangesPercentage" 
+#  "conglomeratesChangesPercentage" 
+#  "consumerCyclicalChangesPercentage" 
+#  "consumerDefensiveChangesPercentage"
+#  "energyChangesPercentage" 
+#  "financialChangesPercentage" 
+#  "financialServicesChangesPercentage" 
+#  "healthcareChangesPercentage" 
+#  "industrialGoodsChangesPercentage" 
+#  "industrialsChangesPercentage" 
+#  "realEstateChangesPercentage" 
+#  "servicesChangesPercentage" 
+#  "technologyChangesPercentage"
+def getSectorPerformanceAverage(sector, day):
+    history = requestSectorPerformance()
+    
+    perf = []
+
 """
 #stocks sorting
 def get_stockList(): 
@@ -143,4 +169,4 @@ def getPricePercent(tker, day):
 
 #historical volatility 
 #===============================
-print(getPricePercent('TSLA',90))
+print(getPricePercent('V',90))
