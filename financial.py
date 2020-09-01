@@ -115,10 +115,20 @@ def requestHistoryStockPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
     return r.json()['historical']
 
-def getPriceCurrent(tker):
-    return pd.DataFrame(getPriceCurrent(tker)['close'])
+def getPriceAverage(tker, day):
+    history = requestHistoryStockPrice(tker)
+    #create a list of all prices 
+    prices = []
+    for item in history: 
+        prices.append(item['close'])
+    #CAL everage
+    total = 0
+    i = 0
+    while i < day:
+        total += prices[i]
+        i+=1
+    return total/day
 
 
 #===============================
-
-print(len(getPriceCurrent('AAPL')))
+print(getPriceAverage('AAPL',10))
