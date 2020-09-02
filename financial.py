@@ -231,4 +231,4 @@ def getPricePercent(tker, day):
 #historical volatility 
 #===============================
 #print(getPricePercent('V',90))
-print(getSectorsPerformance(1))
+#print(getSectorsPerformance(1))
