@@ -118,10 +118,71 @@ def requestSectorPerformance():
 #  "realEstateChangesPercentage" 
 #  "servicesChangesPercentage" 
 #  "technologyChangesPercentage"
-def getSectorPerformanceAverage(sector, day):
+def getSectorPerformanceAveragePercent(sector, day):  # day smaller than 6 months
+    sectors = ['utilitiesChangesPercentage',
+               'basicMaterialsChangesPercentage',
+               'communicationServicesChangesPercentage',
+               'conglomeratesChangesPercentage',
+               'consumerCyclicalChangesPercentage',
+               'consumerDefensiveChangesPercentage',
+               'energyChangesPercentage',
+               'financialChangesPercentage',
+               'financialServicesChangesPercentage',
+               'healthcareChangesPercentage',
+               'industrialGoodsChangesPercentage',
+               'industrialsChangesPercentage',
+               'realEstateChangesPercentage',
+               'servicesChangesPercentage',
+               'technologyChangesPercentage']
+    #find out the sector based on key words
+    for item in sectors:
+        if item.find(sector) != -1:
+            sector = item
+            break
+    #print('sector is: '+sector)
+    perform = []
     history = requestSectorPerformance()
-    
-    perf = []
+    for item in history:
+       perform.append(item[sector])
+    i = 0
+    total = 0
+    while i<day:
+        total += perform[i]
+        i += 1
+    return total/day
+
+def getSectorsPerformance(day):
+    sectors = ['utilitiesChangesPercentage',
+               'basicMaterialsChangesPercentage',
+               'communicationServicesChangesPercentage',
+               'conglomeratesChangesPercentage',
+               'consumerCyclicalChangesPercentage',
+               'consumerDefensiveChangesPercentage',
+               'energyChangesPercentage',
+               'financialChangesPercentage',
+               'financialServicesChangesPercentage',
+               'healthcareChangesPercentage',
+               'industrialGoodsChangesPercentage',
+               'industrialsChangesPercentage',
+               'realEstateChangesPercentage',
+               'servicesChangesPercentage',
+               'technologyChangesPercentage']   
+    history = requestSectorPerformance()
+    max = -999
+    bestsector = sectors[0]
+    for label in sectors:
+        perform = []
+        for item in history:
+            perform.append(item[label])
+        i, total = 0,0
+        while i < day:
+            total += perform[i]
+            i += 1
+        print(label + ' : ' + str(total/day))
+        if max < total/day:
+            max = total/day
+            bestsector = label
+    return bestsector,max
 
 """
 #stocks sorting
@@ -169,4 +230,5 @@ def getPricePercent(tker, day):
 
 #historical volatility 
 #===============================
-print(getPricePercent('V',90))
+#print(getPricePercent('V',90))
+print(getSectorsPerformance(1))
