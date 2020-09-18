@@ -1,7 +1,7 @@
 """
 ========================
 Stock financials Module
-Version 0.1
+Version 1.0
 ========================
 
 Author: Jacob H.
@@ -15,6 +15,8 @@ List of Included Functions:
 import plotly.graph_objects as go
 import requests
 import pandas as pd
+import signal
+from datetime import datetime, timedelta, date
 
 key = '3711ff28a46fd9f7cbc915ca70a67b30'
 
@@ -184,35 +186,102 @@ def getSectorsPerformance(day):
             bestsector = label
     return bestsector,max
 
-"""
-#stocks sorting
-def get_stockList(): 
-    df = pd.DataFrame(requestAllStocks())
-    #iterate all stocks
-    for ind in df.index:
-        stock = df['symbol'][ind]
-        #print(stock, get_profileIndustry(stock))
-   
-
-
-
-#print(get_stockList())    
-"""
 #=============================================================
 #requerst historical and current stock price
+"""
 def requestHistoryStockPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
+    return r.json()['historical']
+"""
+def requestHistoryStockPrice_n(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
+    return r.json()['historical']
+
+def requestHistoryStockPrice(tker, start, end):
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker +'?from=' + start + '&to=' + end + '&apikey=' + key)
     return r.json()['historical']
 
 def requestCurrentPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/quote-short/' + tker + '?apikey=' + key)
-    return r.json()[0]['price']
+    return r.json()
 
+def request30minStockPrice(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/30min/' + tker + '?apikey=' + key)
+    return r.json()
+
+def request1hourStockPrice(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/1hour/' + tker + '?apikey=' + key)
+    return r.json()    
+
+def requestMarketOpen():
+    r = requests.get('https://financialmodelingprep.com/api/v3/market-hours?apikey='+key)
+    data = r.json()
+    return data
+
+def isMarketOpen():
+    data = requestMarketOpen()
+    return data[0]['isTheStockMarketOpen']
+
+def get30minStockPriceChange(tker):
+    data = request30minStockPrice(tker)[0]
+    openPrice = data['open']
+    closePrice = data['close']
+    return (closePrice - openPrice)/openPrice*100
+
+def get1hourStockPriceChange(tker):
+    data = request1hourStockPrice(tker)[0]
+    openPrice = data['open']
+    lowPirce = data['low']
+    closePrice = data['close']
+    return (closePrice - lowPirce)/lowPirce*100
+"""
 def getPriceAverage(tker, day):
     history = requestHistoryStockPrice(tker)
     #create a list of all prices 
     prices = []
     for item in history: 
+        prices.append(float(item['close']))
+    #CAL everage
+    total = 0
+    i = 0
+    while i < day:
+        total += prices[i]
+        i+=1
+    #return "{:.2f}".format(total/day)
+    return total/day
+"""
+def calDates(day):
+    return date.today() - timedelta(day)
+
+def getPriceAverage(tker, day):
+    end = date.today().strftime("%Y-%m-%d")
+    start = calDates(day).strftime("%Y-%m-%d")
+    #print('end', end)
+    #print('start',start)
+    history = requestHistoryStockPrice(tker, start, end)
+    #print(history)
+    #create a list of all prices 
+    prices = []
+    for item in history: 
+        #print(type(item['close']))
+        prices.append(item['close'])
+    #CAL everage
+    #print('prices', prices)
+    #print('len',len(prices))
+    total = 0
+    i = 0
+    while i < len(prices):
+        total += prices[i]
+        i+=1
+    #return "{:.2f}".format(total/day)
+    return total/len(prices)
+
+def getPriceAverage_n(tker, day):
+    history = requestHistoryStockPrice_n(tker)
+    #create a list of all prices 
+    prices = []
+    for item in history: 
+        #print(type(item['close']))
         prices.append(item['close'])
     #CAL everage
     total = 0
@@ -220,15 +289,27 @@ def getPriceAverage(tker, day):
     while i < day:
         total += prices[i]
         i+=1
-    return total/day
+    return "{:.2f}".format(total/day)
+    
 
 def getPriceCurrent(tker):
-    return requestCurrentPrice(tker)
+    data = requestCurrentPrice(tker)
+    return data[0]['price']
+
+def getPriceYesterday(tker):
+    return requestHistoryStockPrice(tker)[0]['close']
 
 def getPricePercent(tker, day): 
     return "{:.2f}".format((getPriceCurrent(tker) - getPriceAverage(tker,day))/getPriceAverage(tker,day)*100)
 
+# (current price - yesterday price)/yesterday price 
+def getTodayReturn(tker):
+    current = getPriceCurrent(tker)
+    yesterday = getPriceYesterday(tker)
+    return float("{:.2f}".format((float(current) - float(yesterday))/float(yesterday)*100))
+
 #historical volatility 
 #===============================
-#print(getPricePercent('V',90))
-#print(getSectorsPerformance(1))
+
+
+
