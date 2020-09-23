@@ -58,70 +58,71 @@ def buyByReturn(tker):
 
 #compare price with average price in a period, e.g. 30 days
 def buyByAverage(tker):
-    ave = f.getPriceAverage(tker, 30)
-    current = f.getPriceCurrent(tker)
-    #current = 100
-    print(tker, 'current', current, 'ave', ave)
-    if current < ave:
-        return tker
-    else: print(tker,'not meet the conditions,quit')
-    time.sleep(3)
-
+    try:
+        ave = f.getPriceAverageByDay(tker, 30)
+        current = f.getPriceCurrent(tker)
+        print(tker, 'current', current, 'ave', ave)
+        if current < ave:
+            return tker
+        else: 
+            print(tker,'not meet the conditions,quit')
+        time.sleep(3)
+    except Exception as exc:
+        print('failed to get average or current price for ', tker,'error:',exc)
+        
 
 def buyWhenUp(tker):
-    money = 50
-    percent = f.get1hourStockPriceChange(tker)
-    print(tker,'1 hour change', percent)
-    if percent > 1.5:
-        print(tker,'is to buy')
-        check = checkCap(tker,200)
-        if check:
-            r.orders.order_buy_fractional_by_price(tker,money,timeInForce='gfd',priceType='ask_price',extendedHours=False)
-            print('buy', tker)
-            logRecord(tker,'buy',money)
-            return tker
-    time.sleep(3)
-
-
-
+    try:
+        money = 50
+        percent = f.get1hourStockPriceChange(tker)
+        print(tker,'1 hour change', percent)
+        if percent > 1.0:
+            print(tker,'is to buy')
+            check = checkCap(tker,200)
+            if check:
+                return buyStock(tker,money)
+    except Exception as exc:
+        print('failed to get 1 hour  price change for ', tker,'error:',exc)
 
 def sellByReturn(tker):
     try:
         percent = t.getEquityChange(tker)
         print(tker, 'percent', percent)
-
-        if percent < -15 and t.getEquity(tker) > 10:
-            r.orders.order_sell_fractional_by_price(tker,t.getEquity(tker)*0.7,timeInForce='gfd',priceType='bid_price',extendedHours=False)
-            print(tker,'sell 70%')
-            logRecord(tker,'Sell', t.getEquity(tker)*0.7)
-            return tker
-        elif percent < -10 and t.getEquity(tker) > 10:
-            r.orders.order_sell_fractional_by_price(tker,t.getEquity(tker)*0.5,timeInForce='gfd',priceType='bid_price',extendedHours=False)
-            print(tker,'sell 50%')
-            logRecord(tker,'Sell',t.getEquity(tker)*0.5)
-            return tker
-        elif percent > 10 and t.getEquity(tker) > 10: #collect profit 
-            r.orders.order_sell_fractional_by_price(tker,t.getEquity(tker)*0.5,timeInForce='gfd',priceType='bid_price',extendedHours=False)
-            logRecord(tker,'Sell',t.getEquity(tker)*0.5)
-            print(tker,'sell 50%')
-            return tker
-        else : 
-            print(tker,'is not to sell')
+        try:
+            value = t.getEquity(tker)
+            if percent < -10:
+                print(tker,'sell ',value)
+                return sellStock(tker,f.round_half_down(value,2))
+            elif percent > 10:
+                print(tker, 'sell ', value*0.7)
+                return sellStock(tker,f.round_half_down(value*0.7,2))
+            else : 
+                print(tker,'is not to sell')
+        except Exception as exc:
+            print('failed to get equity for ', tker,'error:',exc)
     except KeyError:
         print(tker,'does not exist in your profolio')
  
 
-def checkCap(tker, cap):
+def checkCap(tker, cap):   
     total_equity = t.getTotalEquity()
     invest = t.getTotalInvest()
-    equity = t.getEquity(tker)
-    print('profolio',tker, total_equity, cap ,invest, equity)
-    if total_equity/invest < 0.8 and equity < cap:
-        print('qualified to buy')
-        return True
-    else: 
-        print('unqaulified to buy')
-        return False
+    if tker in t.getMyStockList():
+        equity = t.getEquity(tker)
+        print('total equity',total_equity, 'tker',tker, 'cap', cap,'invest', invest, 'equity',equity)
+        if total_equity/invest < 0.8 and equity < cap:
+            print('qualified to buy')
+            return True
+        else: 
+            print('unqaulified to buy')
+            return False
+    else :
+        if total_equity/invest < 0.8:
+            print('qualified to buy')
+            return True
+        else:
+            print('no more funds to invest')
+            return False
 
 
 def logRecord(tker,action,amount):
@@ -134,3 +135,56 @@ def logRecord(tker,action,amount):
 
 
 
+
+def buyStock(tker,value):
+    flag = True
+    buy = True
+    count = 0
+    while flag and count < 10:
+        if buy:
+            result = r.orders.order_buy_fractional_by_price(tker,value,timeInForce='gfd',extendedHours=False)
+            print(result['id'])
+        time.sleep(15)
+        order = r.orders.get_stock_order_info(result['id'])
+        print(order['state'])
+        if order['state'] == 'filled':
+            flag = False
+            buy = False
+            print('buy is complete')
+            logRecord(tker,'buy',value)
+            return tker
+        elif order['state'] == 'cancelled':
+            flag = True
+            buy = True
+            print('order has been cancelled')
+        else: 
+            flag = True
+            buy = False
+            print('checking state later')
+        count +=1
+        print('count',count)
+
+def sellStock(tker,value):
+    flag = True
+    buy = True
+    count = 0
+    while flag and count < 10:
+        if buy:
+            result = r.orders.order_sell_fractional_by_price(tker,value,timeInForce='gfd',extendedHours=False)
+            print(result['id'])
+        time.sleep(15)
+        order = r.orders.get_stock_order_info(result['id'])
+        print(order['state'])
+        if order['state'] == 'filled':
+            flag = False
+            print('buy is complete')
+            logRecord(tker,'sell',value)
+            return tker
+        elif order['state'] == 'cancelled':
+            buy = True
+            print('order has been cancelled')
+        else: 
+            buy = False
+            print('checking state later')
+        count +=1
+        print('count',count)

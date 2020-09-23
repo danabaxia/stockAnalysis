@@ -46,12 +46,15 @@ def getEquity(tker, holdings):
     return holdings['equity'].loc[tker]
 
 def getEquity(tker):
-    holdings = getMyStockHoldings()
-    return float(holdings['equity'].loc[tker])
+    try:
+        holdings = getMyStockHoldings()
+        return float(holdings['equity'].loc[tker])
+    except Exception as exc:
+        print('failed to request getEquity(), error: ', exc)
 
 def getEquityChange(tker):
     holdings = getMyStockHoldings()
-    return float(holdings['percent_change'].loc[tker])    
+    return float(holdings['percent_change'].loc[tker]) 
 
 def requestInvestmentProfile():
     d = r.profiles.load_account_profile()

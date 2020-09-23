@@ -17,8 +17,13 @@ import requests
 import pandas as pd
 import signal
 from datetime import datetime, timedelta, date
+import math
 
 key = '3711ff28a46fd9f7cbc915ca70a67b30'
+
+def round_half_down(n, decimals=0):
+    multiplier = 10 ** decimals
+    return math.ceil(n*multiplier - 0.5) / multiplier
 
 def requestIncome(tker,period):
     if period == 'quarter':
@@ -194,29 +199,52 @@ def requestHistoryStockPrice(tker):
     return r.json()['historical']
 """
 def requestHistoryStockPrice_n(tker):
-    r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
-    return r.json()['historical']
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?apikey=' + key)
+        return r.json()['historical']
+    except Exception as exc:
+        print('error: ',exc)
+
+def requestHistoryStockPriceByDay(tker,day):
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?timeseries=' + str(day) + '&apikey=' + key)
+        return r.json()['historical']
+    except Exception as exc:
+        print('error:', exc)
 
 def requestHistoryStockPrice(tker, start, end):
-    r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker +'?from=' + start + '&to=' + end + '&apikey=' + key)
-    return r.json()['historical']
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker +'?from=' + start + '&to=' + end + '&apikey=' + key)
+        return r.json()['historical']
+    except Exception as exc:
+        print('error: ',exc)
 
 def requestCurrentPrice(tker):
-    r = requests.get('https://financialmodelingprep.com/api/v3/quote-short/' + tker + '?apikey=' + key)
-    return r.json()
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/quote-short/' + tker + '?apikey=' + key)
+        return r.json()
+    except Exception as exc:
+        print('error: ', exc)
 
 def request30minStockPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/30min/' + tker + '?apikey=' + key)
     return r.json()
 
 def request1hourStockPrice(tker):
-    r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/1hour/' + tker + '?apikey=' + key)
-    return r.json()    
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/1hour/' + tker + '?apikey=' + key)
+        return r.json()
+    except Exception as exc:
+        print('error: ', exc)    
 
 def requestMarketOpen():
-    r = requests.get('https://financialmodelingprep.com/api/v3/market-hours?apikey='+key)
-    data = r.json()
-    return data
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/market-hours?apikey='+key)
+        data = r.json()
+        return data
+    except Exception as exc:
+        print('error ', exc)
+
 
 def isMarketOpen():
     data = requestMarketOpen()
@@ -233,7 +261,7 @@ def get1hourStockPriceChange(tker):
     openPrice = data['open']
     lowPirce = data['low']
     closePrice = data['close']
-    return (closePrice - lowPirce)/lowPirce*100
+    return round_half_down((closePrice - lowPirce)/lowPirce*100,2)
 """
 def getPriceAverage(tker, day):
     history = requestHistoryStockPrice(tker)
@@ -274,7 +302,7 @@ def getPriceAverage(tker, day):
         total += prices[i]
         i+=1
     #return "{:.2f}".format(total/day)
-    return total/len(prices)
+    return round_half_down(total/len(prices),2)
 
 def getPriceAverage_n(tker, day):
     history = requestHistoryStockPrice_n(tker)
@@ -289,8 +317,22 @@ def getPriceAverage_n(tker, day):
     while i < day:
         total += prices[i]
         i+=1
-    return "{:.2f}".format(total/day)
-    
+    return round_half_down(total/i)
+
+def getPriceAverageByDay(tker,day):
+    history = requestHistoryStockPriceByDay(tker,day)
+    #create a list of all prices 
+    prices = []
+    for item in history: 
+        #print(type(item['close']))
+        prices.append(item['close'])
+    #CAL everage
+    total = 0
+    i = 0
+    while i < day:
+        total += prices[i]
+        i+=1
+    return round_half_down(total/i)      
 
 def getPriceCurrent(tker):
     data = requestCurrentPrice(tker)
@@ -300,7 +342,7 @@ def getPriceYesterday(tker):
     return requestHistoryStockPrice(tker)[0]['close']
 
 def getPricePercent(tker, day): 
-    return "{:.2f}".format((getPriceCurrent(tker) - getPriceAverage(tker,day))/getPriceAverage(tker,day)*100)
+    return round_half_down((getPriceCurrent(tker) - getPriceAverage(tker,day))/getPriceAverage(tker,day)*100,2)
 
 # (current price - yesterday price)/yesterday price 
 def getTodayReturn(tker):
