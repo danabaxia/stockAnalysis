@@ -18,6 +18,7 @@ import pandas as pd
 import signal
 from datetime import datetime, timedelta, date
 import math
+import csv
 
 key = '3711ff28a46fd9f7cbc915ca70a67b30'
 
@@ -205,6 +206,13 @@ def requestHistoryStockPrice_n(tker):
     except Exception as exc:
         print('error: ',exc)
 
+def requestHistoryStockPrice_s(tker):
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?serietype=line&apikey=' + key)
+        return r.json()['historical']
+    except Exception as exc:
+        print('error: ',exc)
+
 def requestHistoryStockPriceByDay(tker,day):
     try:
         r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/' + tker + '?timeseries=' + str(day) + '&apikey=' + key)
@@ -224,7 +232,7 @@ def requestCurrentPrice(tker):
         r = requests.get('https://financialmodelingprep.com/api/v3/quote-short/' + tker + '?apikey=' + key)
         return r.json()
     except Exception as exc:
-        print('error: ', exc)
+        print('requestCurrentPrice error: ', exc)
 
 def request30minStockPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/30min/' + tker + '?apikey=' + key)
@@ -247,8 +255,12 @@ def requestMarketOpen():
 
 
 def isMarketOpen():
-    data = requestMarketOpen()
-    return data[0]['isTheStockMarketOpen']
+    try:
+        data = requestMarketOpen()
+        return data[0]['isTheStockMarketOpen']
+    except Exception as exc:
+        print('error',exc)
+        return False
 
 def get30minStockPriceChange(tker):
     data = request30minStockPrice(tker)[0]
@@ -281,9 +293,38 @@ def getPriceAverage(tker, day):
 def calDates(day):
     return date.today() - timedelta(day)
 
+def calDatesFrom(end, day):
+    date_obj = datetime.strptime(end, '%Y-%m-%d')
+    end_date = date_obj.date()
+    
+    return (end_date - timedelta(day))
+
 def getPriceAverage(tker, day):
     end = date.today().strftime("%Y-%m-%d")
     start = calDates(day).strftime("%Y-%m-%d")
+    #print('end', end)
+    #print('start',start)
+    history = requestHistoryStockPrice(tker, start, end)
+    #print(history)
+    #create a list of all prices 
+    prices = []
+    for item in history: 
+        #print(type(item['close']))
+        prices.append(item['close'])
+    #CAL everage
+    #print('prices', prices)
+    #print('len',len(prices))
+    total = 0
+    i = 0
+    while i < len(prices):
+        total += prices[i]
+        i+=1
+    #return "{:.2f}".format(total/day)
+    return round_half_down(total/len(prices),2)
+
+def getPriceAverageFrom(tker, end, day):
+    #end_date = date.today().strftime("%Y-%m-%d")
+    start = calDatesFrom(end,day).strftime("%Y-%m-%d")
     #print('end', end)
     #print('start',start)
     history = requestHistoryStockPrice(tker, start, end)
@@ -320,19 +361,22 @@ def getPriceAverage_n(tker, day):
     return round_half_down(total/i)
 
 def getPriceAverageByDay(tker,day):
-    history = requestHistoryStockPriceByDay(tker,day)
-    #create a list of all prices 
-    prices = []
-    for item in history: 
-        #print(type(item['close']))
-        prices.append(item['close'])
-    #CAL everage
-    total = 0
-    i = 0
-    while i < day:
-        total += prices[i]
-        i+=1
-    return round_half_down(total/i)      
+    try:
+        history = requestHistoryStockPriceByDay(tker,day)
+        #create a list of all prices 
+        prices = []
+        for item in history: 
+            #print(type(item['close']))
+            prices.append(item['close'])
+        #CAL everage
+        total = 0
+        i = 0
+        while i < day:
+            total += prices[i]
+            i+=1
+        return round_half_down(total/i)  
+    except Exception as exc:
+        print('getPriceAverageByDay error:', exc)    
 
 def getPriceCurrent(tker):
     data = requestCurrentPrice(tker)
@@ -354,4 +398,42 @@ def getTodayReturn(tker):
 #===============================
 
 
+#Stock data
+#==============================
+def getStockListToCVS():
+    data = requestAllStocks()
+    print(len(data))
+    stock_list = open('stock_list.csv','w')
+    csv_writer = csv.writer(stock_list)
+    count = 0
 
+    for element in data:
+        if count == 0:
+            header = element.keys()
+            csv_writer.writerow(header)
+        csv_writer.writerow(element.values())
+        count+=1
+    stock_list.close()
+
+def saveListToCSV(data,header=None,isHeader=False):
+    f = open('good_candidates_new.csv','w')
+    csv_writer = csv.writer(f)
+    if isHeader:
+        csv_writer.writerow(header)
+    for element in data:
+        csv_writer.writerow(element)
+    f.close()
+
+def readStockFromCSV():
+    with open('stock_list.csv', newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    return data
+
+
+def requestStockRate(tker):
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/rating/' + tker + '?apikey=' + key)
+        return r.json()[0]['ratingScore']
+    except Exception as exc:
+        print('request stock rate error:', exc)

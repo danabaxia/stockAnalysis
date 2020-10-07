@@ -20,18 +20,23 @@ def keyboardInterruptHandler(signal, frame):
 
 while True:
     watch_list = []
-    my_stock_list = ['DIS','AMZN','AAPL','FB','TAN','NIO','MSFT','TDOC','GOOGL','SBUX','AMD','TQQQ','CLOU','NKLA','PYPL','TWOU','V','TPR','BA','SPXS']
-    while not f.isMarketOpen():
+    my_stock_list = ['DIS','AMZN','AAPL','FB','TAN','NIO','MSFT','TDOC','GOOGL','AMD','TQQQ','CLOU','PYPL','TWOU','V','TPR','NVDA','TSLA','TDOC','RUN','VSLR','ENPH','SBUX','SEDG','AES','TSM','NXPI','UPS','JWN']
+    dividend_list = ['T','AGNC']
+    while f.isMarketOpen():
         signal.signal(signal.SIGINT, keyboardInterruptHandler)
         if len(my_stock_list) > 0:
             print('stock list',my_stock_list)
             print('watch list', watch_list)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor: 
-                results = list(map(lambda x: executor.submit(a.sellByReturn, x), my_stock_list))
-                for result in concurrent.futures.as_completed(results):
-                    if result.result() in my_stock_list:
-                        print('sell', result.result())
-                        my_stock_list.remove(result.result())
+            #sell loss
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor: 
+                    results = list(map(lambda x: executor.submit(a.sellByReturn, x), my_stock_list))
+                    for result in concurrent.futures.as_completed(results):
+                        if result.result() in my_stock_list:
+                            print('sell', result.result())
+                            my_stock_list.remove(result.result())
+            except Exception as exc:
+                print('error:', exc)
             
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
@@ -42,7 +47,7 @@ while True:
                             print(result.result(),'add to watch list')
                             watch_list.append(result.result())
             except Exception as exc:
-                print('error: ', exc)
+                print('buy evarage error: ', exc)
             #check watch list to buy
             if len(watch_list) > 0:
                 try:
@@ -53,8 +58,22 @@ while True:
                                 watch_list.remove(result.result())
                                 my_stock_list.remove(result.result())
                 except Exception as exc:
-                    print('error: ',exc)
+                    print('buywhenup error: ',exc)
+        """
+        #for dividend stocks stradegy
+        if len(dividend_list) > 0:
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
+                    results = list(map(lambda x: executor.submit(a.buyWhenUp,x), dividend_list))
+                    for result in concurrent.futures.as_completed(results):
+                        if result.result() in dividend_list:
+                            dividend_list.remnove(result.result())
+            except Exception as exc:
+                print('divident error: ', exc)
+        """
+
     print('still alive')
+    time.sleep(60)
 
 
 

@@ -1,0 +1,4 @@
+#if a tiker has been sold since it lost more than 10%, how to lock it for a period of time before buy more or dump it 
+
+
+#how to calculate stop loss price

@@ -90,10 +90,10 @@ def sellByReturn(tker):
         print(tker, 'percent', percent)
         try:
             value = t.getEquity(tker)
-            if percent < -10:
+            if percent < -7 and value > 50:
                 print(tker,'sell ',value)
                 return sellStock(tker,f.round_half_down(value,2))
-            elif percent > 10:
+            elif percent > 10 and value > 50:
                 print(tker, 'sell ', value*0.7)
                 return sellStock(tker,f.round_half_down(value*0.7,2))
             else : 
@@ -102,6 +102,8 @@ def sellByReturn(tker):
             print('failed to get equity for ', tker,'error:',exc)
     except KeyError:
         print(tker,'does not exist in your profolio')
+    except: 
+        print('connection error')
  
 
 def checkCap(tker, cap):   
@@ -188,3 +190,9 @@ def sellStock(tker,value):
             print('checking state later')
         count +=1
         print('count',count)
+
+
+#this is for dividend stradegy 
+#stradegy 1 : price < average and equity < total_equity*5%: buy 
+
+              
