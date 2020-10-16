@@ -5,6 +5,7 @@ import time
 import signal
 import csv
 from datetime import datetime
+import csv
 
 def keyboardInterruptHandler(signal, frame):
     print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
@@ -192,7 +193,20 @@ def sellStock(tker,value):
         print('count',count)
 
 
-#this is for dividend stradegy 
-#stradegy 1 : price < average and equity < total_equity*5%: buy 
+#==========================
+#read from csv for stocks
+def read_stocks(f):
+    up_stock=[]
+    flat_stock=[]
+    strong_stock=[]
+    down=[]
+    with open(f) as csvfile:
+        readCSV = csv.reader(csvfile)
+        for row in readCSV:
+            print(len(row))
+    return readCSV
+            
 
-              
+#read_stocks('my_stock.csv')
+
+

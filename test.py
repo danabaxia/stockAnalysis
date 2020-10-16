@@ -17,12 +17,12 @@ import csv
 #r.login('danabaxia@gmail.com','Hjb1314!@#$')
 #tker = '%5EGSPC'
 
-stock_list = []
+"""stock_list = []
 candidate = {'tker':[],'below 25':[]}
 stock_exchanges = ['NYSE','Nasdaq','NYSE Arca','Nasdaq Global Select','New York Stock Exchange','NASDAQ Capital Market','NYSE American','NASDAQ Global Market','NasdaqCM','NasdaqGM','NasdaqGS']
-data = f.readStockFromCSV()
+data = f.readStockFromCSV()"""
 
-def isfloat(string):
+"""def isfloat(string):
     try:
         float(string)
         return True
@@ -35,7 +35,7 @@ for i in range(len(data)):
     if isfloat(data[i][2]):
         if float(data[i][2]) > 5 and float(data[i][2]) <50:
             if data[i][-1] in stock_exchanges:
-                stock_list.append(data[i][0])
+                stock_list.append(data[i][0])"""
 
 #print(stock_list)
 
@@ -71,23 +71,25 @@ for tker in stock_list:
  
 """
 
-f =pd.DataFrame(stock_list)
-f.to_csv("output.csv")
+"""f =pd.DataFrame(stock_list)
+f.to_csv("output.csv")"""
 
 
-"""tker = 'TAN'
-result = {'date':[],'price':[],'average':[]}
+"""tker = 'NIO'
+result = {'date':[],'price':[],'average_15':[],'average_30':[]}
 data = f.requestHistoryStockPrice_s(tker)
 count = 0
 below = 0
 for daily in data: 
     date = daily['date']
     price = daily['close']
-    ave = f.getPriceAverageFrom(tker,date,30)
+    ave_15 = f.getPriceAverageFrom(tker,date,15)
+    ave_30 = f.getPriceAverageFrom(tker,date,30)
     result['date'].append(date)
     result['price'].append(price)
-    result['average'].append(ave)
-    if float(price) < float(ave):
+    result['average_15'].append(ave_15)
+    result['average_30'].append(ave_30)
+    if float(price) < float(ave_30):
         below += 1
     count += 1
     if count > 100:
@@ -101,11 +103,12 @@ print(below)
 
 ax = plt.gca()
 result_pd.plot(kind='line',x='date',y='price', ax=ax)
-result_pd.plot(kind='line',x='date',y='average', ax=ax)
+result_pd.plot(kind='line',x='date',y='average_15', ax=ax)
+result_pd.plot(kind='line',x='date',y='average_30', ax=ax)
 
 
 
-plt.show()
-"""
+plt.show()"""
+
 
 

@@ -20,7 +20,7 @@ def keyboardInterruptHandler(signal, frame):
 
 while True:
     watch_list = []
-    my_stock_list = ['DIS','AMZN','AAPL','FB','TAN','NIO','MSFT','TDOC','GOOGL','AMD','TQQQ','CLOU','PYPL','TWOU','V','TPR','NVDA','TSLA','TDOC','RUN','VSLR','ENPH','SBUX','SEDG','AES','TSM','NXPI','UPS','JWN']
+    my_stock_list = ['DIS','AMZN','AAPL','FB','TAN','NIO','MSFT','TDOC','GOOGL','AMD','TQQQ','CLOU','PYPL','TWOU','V','TPR','NVDA','TSLA','RUN','VSLR','ENPH','SBUX','SEDG','AES','TSM','NXPI','UPS','JWN','AAWW','SQ']
     dividend_list = ['T','AGNC']
     while f.isMarketOpen():
         signal.signal(signal.SIGINT, keyboardInterruptHandler)
