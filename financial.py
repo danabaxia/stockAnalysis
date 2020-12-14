@@ -234,6 +234,10 @@ def requestCurrentPrice(tker):
     except Exception as exc:
         print('requestCurrentPrice error: ', exc)
 
+def request15minStockPrice(tker):
+    r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/15min/' + tker + '?apikey=' + key)
+    return r.json()
+
 def request30minStockPrice(tker):
     r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/30min/' + tker + '?apikey=' + key)
     return r.json()

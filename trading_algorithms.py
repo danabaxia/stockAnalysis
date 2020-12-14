@@ -6,6 +6,7 @@ import signal
 import csv
 from datetime import datetime
 import csv
+import concurrent.futures 
 
 def keyboardInterruptHandler(signal, frame):
     print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
@@ -39,6 +40,7 @@ def buyBy30min(tker):
 
 #scan price change comapre to yesterday = (cuerent - yesterday_close) / yesterday_close
 def buyByReturn(tker):
+
     percent = f.getTodayReturn(tker)
     if percent < -3.0:
         print('triger 3', tker)
@@ -58,12 +60,14 @@ def buyByReturn(tker):
 
 
 #compare price with average price in a period, e.g. 30 days
+#ave_percent is int between 0-1
 def buyByAverage(tker):
     try:
+        ave_percent = 0.1
         ave = f.getPriceAverageByDay(tker, 30)
         current = f.getPriceCurrent(tker)
         print(tker, 'current', current, 'ave', ave)
-        if current < ave:
+        if current < ave*(1+ave_percent):
             return tker
         else: 
             print(tker,'not meet the conditions,quit')
@@ -72,12 +76,13 @@ def buyByAverage(tker):
         print('failed to get average or current price for ', tker,'error:',exc)
         
 
+
 def buyWhenUp(tker):
     try:
         money = 50
         percent = f.get1hourStockPriceChange(tker)
         print(tker,'1 hour change', percent)
-        if percent > 1.0:
+        if percent > 10.0:
             print(tker,'is to buy')
             check = checkCap(tker,200)
             if check:
@@ -209,4 +214,41 @@ def read_stocks(f):
 
 #read_stocks('my_stock.csv')
 
-
+#buy stradegy 
+#when price below 10% high of 30 day ave move, put it into watchlist
+#then decide to buy when one hour change up to 1%
+def method1(my_stock_list,watch_list,candidate_list):
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
+            results = list(map(lambda x: executor.submit(buyByAverage,x), my_stock_list))
+            for result in concurrent.futures.as_completed(results):   
+                data = result.result()
+                if data not in watch_list and data is not None:
+                    print(result.result(),'add to watch list')
+                    watch_list.append(result.result())
+    except Exception as exc:
+        print('buy evarage error: ', exc)
+    #check price change to yesterday
+    if len(watch_list) > 0:
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
+                results = list(map(lambda x: executor.submit(buyByReturn,x), watch_list))
+                for result in concurrent.futures.as_completed(results):
+                    data = result.result()
+                    if data not in candidate_list and data is not None:
+                        print(result.result(),'add to watch list')
+                        candidate_list.append(result.result())
+        except Exception as exc:
+            print('buywhenup error: ',exc)
+    #check 1 hour change
+    if len(candidate_list) > 0:
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
+                results = list(map(lambda x: executor.submit(buyWhenUp,x), watch_list))
+                for result in concurrent.futures.as_completed(results):
+                    if result.result() in watch_list:
+                        watch_list.remove(result.result())
+                        my_stock_list.remove(result.result())
+        except Exception as exc:
+            print('buywhenup error: ',exc)
+    return my_stock_list,watch_list
