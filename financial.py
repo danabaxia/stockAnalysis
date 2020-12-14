@@ -4,7 +4,7 @@ Stock financials Module
 Version 1.0
 ========================
 
-Author: Jacob H.
+Author: Jacob Han
 
 List of Included Functions:
 1)get_financial_stmts(frequency, statement_type)

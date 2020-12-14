@@ -10,10 +10,12 @@ import time
 import matplotlib.pyplot as plt
 import indicators as i
 
+#user input robinhood account and password
+#you may be asked to provide text message verify code
+account = input('Enter account:\n')
+password = input('Enter password\n')
 
-
-r.login('danabaxia@gmail.com','Hjb1314!@#$')
-
+r.login(account,password)
 def keyboardInterruptHandler(signal, frame):
     print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
     exit(0)

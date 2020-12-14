@@ -12,24 +12,6 @@ from datetime import datetime
 import csv
 import talib
 
-
-"""def cal_sma(data, n=9):
-    return data.rolling(n).mean()
-
-def cal_ema(data,period):
-    return data.ewm(span=period, adjust=False).mean()
-
-def cal_macd(group, nslow=26, nfast=12, signal=9):
-    emaslow = group.ewm(span=nslow, adjust=False).mean()
-    emafast = group.ewm(span=nfast, adjust=False).mean()
-    macd = emafast - emaslow
-    sig = macd.ewm(span=signal, adjust=False).mean()
-    histogram = macd - sig
-    #result = pd.DataFrame({ 'emaSlw':[emaslow], 'emaFast':[emafast]})
-    result = pd.concat(((emafast-emaslow),sig, histogram),axis=1, sort=False)
-    result.columns = ['MACD','signal','histogram']
-    return result
-"""
 #########################
 #stock tikers grabbing 
 #download data 
