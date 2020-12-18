@@ -8,28 +8,71 @@ import signal
 import concurrent.futures 
 import time
 import matplotlib.pyplot as plt
-import indicators as i
+import indicators as ind
+from Method_kd import KD
+from long_algo import Long_algo as la 
+from Method_BOLL_SMA import BOLL_SMA
+
 
 #user input robinhood account and password
 #you may be asked to provide text message verify code
 account = input('Enter account:\n')
-password = input('Enter password\n')
+password = input('Enter password:\n')
 
 r.login(account,password)
 def keyboardInterruptHandler(signal, frame):
     print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
     exit(0)
 
+def algo_buy(tker):
+    try:
+        data = ind.load_stock_30min(tker)
+        timeFrame = 20
+        bar = BOLL_SMA(tker,data,timeFrame)
+        if bar.buy():
+            print(tker,'is to buy')
+            money = 50
+            check = a.checkCap(tker,200)
+            if check:
+                return a.buyStock(tker,money)
+    except Exception as exc:
+        print('failed to track ', tker,'error:',exc)
+#this is for test purpose             
+def algo_buy_test(tker):
+    try:
+        data = ind.load_stock_30min(tker)
+        timeFrame = 20
+        bar = BOLL_SMA(tker,data,timeFrame)
+        if bar.buy():
+            print(tker,'is to buy')
+            return tker
+        else:
+            pass
+    except Exception as exc:
+        print('failed to track ', tker,'error:',exc)
 
 while True:
     #watch_list = ['PENN','MT','CRM','NIO']
-    watch_list  = ['SQ', 'AAPL','BABA','PYPL','LIT','TAN','ARKK','AGNC','EVRI','NIO','XPEV',
-                   'TSLA','TAN','RVLV','ZM','LIT','NVDA','SUN']
-    dividend_list = ['T','AGNC']
+    """watch_list  = ['SQ', 'AAPL','BABA','PYPL','LIT','TAN','ARKK','AGNC','EVRI','NIO','XPEV',
+                   'TSLA','TAN','RVLV','ZM','LIT','NVDA','SUN']"""
+    watch_list = ['TAN','AMD','AAPL','UPS','ARKG','TSLA','NIO','BABA','LIT']
+    long_list = []
+    for tk in watch_list:
+        data = ind.load_stock(tk, 200)
+        timeFrame = 20
+        a = la(tk,data,timeFrame)
+        if a.buy():
+            long_list.append(tk)
+    print('[Info]:Long_list:',long_list)
+
     while f.isMarketOpen():
-        if len(watch_list) > 0:
+        #scan the long list of history price, check if any stock in long position
+        #if in long position, put it into watch list with 
+
+
+        if len(long_list) > 0:
             #print('stock list',my_stock_list)
-            print('watch list', watch_list)
+            print('[Info]:Long_list:',long_list)
             #sell loss
             """try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor: 
@@ -51,21 +94,21 @@ while True:
                             watch_list.append(result.result())
             except Exception as exc:
                 print('buy evarage error: ', exc)"""
-            #check watch list to buy
-            if len(watch_list) > 0:
-                try:
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
-                        results = list(map(lambda x: executor.submit(i.algo_buy,x), watch_list))
-                        for result in concurrent.futures.as_completed(results):
-                            if result.result() in watch_list:
-                                watch_list.remove(result.result())
-                                #my_stock_list.remove(result.result())
-                except Exception as exc:
-                    print('buywhenup error: ',exc)
+          
+            #This section is buy action
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
+                    results = list(map(lambda x: executor.submit(algo_buy_test,x), watch_list))
+                    for result in concurrent.futures.as_completed(results):
+                        if result.result() in watch_list:
+                            long_list.remove(result.result())
+            except Exception as exc:
+                    print('error: ',exc)
+            
+            
             time.sleep(60)
 
     print('still alive')
-    print(watch_list)
     time.sleep(60)
 
 

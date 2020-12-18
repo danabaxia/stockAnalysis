@@ -6,17 +6,20 @@ import indicators as ind
 import matplotlib.pyplot as plt
 import datetime
 
-
-class BOLL:
+#This method uses SMA20 as enter long signal
+#boll lower band as buy signal 
+class BOLL_SMA:
     def __init__(self, tker, boll_period, window,feed, timeFrame):
         self.feed = feed
+        self.tker = tker
         self.boll_period = boll_period
         self.window = window
         self.timeFrame = timeFrame
-        self.stock = self.calulate_stock().tail(timeFrame)
+        self.stock = self.calculate_stock().tail(timeFrame)
+        self.long = self.calculate_long()
  
 
-    def calulate_stock(self):
+    def calculate_stock(self):
         #change class attributes before calculation 
         stockstats.StockDataFrame.BOLL_PERIOD = self.boll_period
         stock = stockstats.StockDataFrame().retype(self.feed)
@@ -39,6 +42,12 @@ class BOLL:
 
         return stock.round(2)
 
+    def calculate_long(self):
+        data = ind.load_stock(self.tker,200)
+        return stockstats.StockDataFrame().retype(data)
+        
+
+
     def buy(self, stock=None):
         if stock is None:
             stock = self.stock
@@ -48,21 +57,12 @@ class BOLL:
         else:
             return False 
 
-    
-
-    def stradedy_bb(self,stock=None):
+    def lower_lb(self,stock=None, long=None):
         if stock is None:
             stock = self.stock
-        if ind.up_trend(stock['boll']):
-            if ind.down_to_up_trend(stock['boll_band'],right_window=2):
-                return True
-        else:
-            return False
-
-    def lower_lb(self,stock=None):
-        if stock is None:
-            stock = self.stock
-        if ind.up_trend(stock['boll'], window=3):
+        if long is None:
+            stock_l = self.long
+        if ind.up_trend(stock_l['boll'], window=3):
            if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
                if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
                    return True
@@ -88,11 +88,11 @@ class BOLL:
         #pass
 
 if __name__ == "__main__":
-    tker = 'TSLA'
-    timeFrame = 200
+    tker = 'SNOW'
     data = ind.load_stock_30min(tker) 
+    timeFrame = len(data)
     #data = ind.load_stock_from_to('TDOC','2020-08-01','2020-12-01')
-    a = BOLL(tker,20, 3, data, timeFrame)
+    a = BOLL_SMA(tker,20, 3, data, timeFrame)
     test = BackTesting(tker, a.stock, a.buy, a.sell)
     test.run()
     test.get_portfolio()

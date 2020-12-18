@@ -10,7 +10,10 @@ import stockstats
 import time 
 from datetime import datetime
 import csv
-import talib
+import itertools
+#import talib
+
+
 
 #########################
 #stock tikers grabbing 
@@ -59,16 +62,46 @@ def get_all_tickers():
 #########################
 #create binary data 
 def get_binary(x):
-    current_value = 0
+    current_value = 0.1
     current_state = 0
     state = []
+    i = 0
     for value in x:
-        if value >= current_value:
+        trend = value - current_value
+        if trend > 0:
             current_state = 1
-        elif value < current_value:
+        elif trend <= 0:
             current_state = 0
+        else:
+            if i == 0:
+                current_state = 0
+            else: 
+                current_state = state[-1]
         current_value = value 
         state.append(current_state)
+        i += 1
+    return state
+
+def get_binary_angle(x, angle=0.05):
+    current_value = 0.1
+    current_state = 0
+    state = []
+    i = 0
+    for value in x:
+        trend = (value - current_value)/(current_value+0.0001)
+        #print(trend)
+        if trend > angle:
+            current_state = 1
+        elif trend <= -angle:
+            current_state = 0
+        else:
+            if i == 0:
+                current_state = 0
+            else: 
+                current_state = state[-1]
+        current_value = value 
+        state.append(current_state)
+        i += 1
     return state
 
 def get_binary_np(x):
@@ -108,8 +141,32 @@ def load_stock_from(tker,end,day):
     Data = Data.reset_index(drop=True) #inverse the index number
     return Data
 
+#load stock data from start day to end day:
+#fox example load_stock_from_to('NIO', '2020-04-30', '2020-08-01') 
+def load_stock_from_to(tker,start,end):
+    X = f.requestHistoryStockPrice(tker, start, end)
+    Data = pd.DataFrame(X)
+    Data = pd.concat([Data['date'][::-1],Data['open'][::-1],
+                      Data['high'][::-1],Data['low'][::-1],
+                      Data['close'][::-1],Data['volume'][::-1],
+                      Data['adjClose'][::-1]],axis=1)
+    Data.columns = ['date','Open','High','Low','Close','Volume','adjClose']
+    Data = Data.reset_index(drop=True) #inverse the index number
+    return Data   
+
+
 def load_stock_30min(tker):
     X = f.request30minStockPrice(tker)
+    Data = pd.DataFrame(X)
+    Data = pd.concat([Data['date'][::-1],Data['open'][::-1],
+                      Data['high'][::-1],Data['low'][::-1],
+                      Data['close'][::-1],Data['volume'][::-1]],axis=1)
+    Data.columns = ['date','Open','High','Low','Close','Volume']
+    Data = Data.reset_index(drop=True) #inverse the index number
+    return Data
+
+def load_stock_15min(tker):
+    X = f.request15minStockPrice(tker)
     Data = pd.DataFrame(X)
     Data = pd.concat([Data['date'][::-1],Data['open'][::-1],
                       Data['high'][::-1],Data['low'][::-1],
@@ -228,37 +285,6 @@ def buy_signal(stock):
     else: 
         return False
 
-#this function find the timing to buy 
-#return true to buy and false to continue to watch
-def algo_buy(tker):
-    try:
-        data = load_stock_30min(tker)
-        stock = cal_stock(data)
-        print('tkert',tker)
-        print(stock[['close','kdjk','kdjd','cross_kd','macdh']].tail())
-        if buy_signal(stock):
-            print(tker,'is to buy')
-            money = 10
-            check = m.checkCap(tker,200)
-            if check:
-                return m.buyStock(tker,money)
-    except Exception as exc:
-        print('failed to track ', tker,'error:',exc)
-#this is for test purpose             
-def algo_buy_test(tker):
-    try:
-        data = load_stock_30min(tker)
-        stock = cal_stock(data)
-        print('tker',tker)
-        print(stock[['close','kdjk','kdjd','cross_kd','macdh']].tail())
-        if buy_signal(stock):
-            print(tker)
-            return tker
-        else:
-            print(tker)
-    except Exception as exc:
-        print('failed to track ', tker,'error:',exc)
-
 
 def watch_list():
     watch = algo_watch()
@@ -273,28 +299,76 @@ def save_to_csv(tker,day):
     data = load_stock(tker,day)
     data.to_csv(tker+'.csv',index=True)
 
+# up and down trends example with winodw = 1
+#1, 1, 1   up 
+#0, 0, 0   down 
+#1, 1, 0   up to down 
+#0, 0, 1   down to up  
     
 def up_trend(data, window=1):
     b = get_binary(data)
     #print(b)
-    w = []
-    for i in range(window):
-        w.append(1)
+    w = [1]* window
     if list(b[-window:]) == w:
         return True
     else:
         return False
 
 def down_trend(data, window=1):
-    b = get_binary_np(data)
-    w = []
-    for i in range(window):
-        w.append(0)
-    if list(b[-window:]) == w:
+    b = get_binary(data)
+    w = [0]* window
+    if list(b[-window:]) == w: 
         return True
     else:
         return False
 
-#data = [1,1,1,1]
-#dt = pd.DataFrame(data)
-#up_trend(dt,window=1)
+def up_to_down_trend(data, left_window=2,right_window=1):
+    assert left_window >= 0, 'windown size must be >= 0'
+    assert right_window >= 0, 'windown size must be >= 0'
+    b = get_binary_angle(data)
+    #print(b)
+    w = [1]*left_window + [0]*right_window
+    #print(w)
+    if list(b[-(left_window+right_window):]) == w: 
+        return True
+    else:
+        return False
+
+def down_to_up_trend(data, left_window=2, right_window=1):
+    assert left_window >= 0, 'windown size must be >= 0'
+    assert right_window >= 0, 'windown size must be >= 0'
+    b = get_binary_angle(data)
+    #print(b)
+    w = [0]*left_window + [1]*right_window
+    #print(w)
+    if list(b[-(left_window+right_window):]) == w: 
+        return True
+    else:
+        return False
+         
+
+
+
+#generator combinatons 
+def parameteras_generator(*arg):
+    pool = {'SMA_short': range(2,14),
+            'SMA_mid': range(15,29),
+            'SMA_long': range(30,91),
+            'rsi_low': range(2,20),
+            'rsi_hi': range(65,90),
+            'boll': range(5,15)}
+    #check if the arguments in the pool 
+    assert all(name in pool for name in arg), 'arguments contain error(s)'
+    
+    output = []
+    for key in arg:
+        output.append(pool[key])
+    
+    return itertools.product(*output)
+
+
+if __name__ == "__main__":
+    data = pd.DataFrame([5,2,1,0.5,5],columns=['A'])
+    print(down_to_up_trend(data['A']))
+    print(up_to_down_trend(data['A']))
+

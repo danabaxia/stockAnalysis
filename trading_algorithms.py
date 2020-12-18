@@ -7,6 +7,8 @@ import csv
 from datetime import datetime
 import csv
 import concurrent.futures 
+import indicators as ind
+
 
 def keyboardInterruptHandler(signal, frame):
     print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
@@ -252,3 +254,35 @@ def method1(my_stock_list,watch_list,candidate_list):
         except Exception as exc:
             print('buywhenup error: ',exc)
     return my_stock_list,watch_list
+
+
+def algo_buy(tker):
+    try:
+        data = ind.load_stock_30min(tker)
+        stock = cal_stock(data)
+        print('tkert',tker)
+        print(stock[['close','kdjk','kdjd','cross_kd','macdh']].tail())
+        if buy_signal(stock):
+            print(tker,'is to buy')
+            money = 10
+            check = m.checkCap(tker,200)
+            if check:
+                return m.buyStock(tker,money)
+    except Exception as exc:
+        print('failed to track ', tker,'error:',exc)
+#this is for test purpose             
+def algo_buy_test(tker):
+    try:
+        data = load_stock(tker, 200)
+        #using kd method 
+        #a = kd.method_KD(tker,15, 16, data)
+        #stock = a.stock 
+        stock = None
+        print('tker',tker)
+        if a.buy(stock):
+            print('buy',tker)
+            return tker
+        else:
+            pass
+    except Exception as exc:
+        print('failed to track ', tker,'error:',exc)
