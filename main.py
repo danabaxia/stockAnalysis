@@ -16,8 +16,8 @@ from Method_BOLL_SMA import BOLL_SMA
 
 #user input robinhood account and password
 #you may be asked to provide text message verify code
-#t.login()
-r.login('danabaxia@gmail.com','Hjb1314!@#$')
+t.login()
+
 def algo_buy(tker):
     try:
         data = ind.load_stock_30min(tker)
