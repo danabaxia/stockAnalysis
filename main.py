@@ -46,10 +46,6 @@ def algo_buy_test(tker):
         print('failed to track ', tker,'error:',exc)
 
 while True:
-    #watch_list = ['PENN','MT','CRM','NIO']
-    #watch_list = ['TAN','AMD','AAPL','UPS','ARKG','TSLA','NIO','BABA','LIT',
-    #              'GOOGL', 'AMZN','DKNG','FB','NIO','ARKK','SQ','PYPL','NVDA',
-    #              'TDOC','MSFT','TQQQ']
     df = f.read_stocks('stocks/stocks.csv')
     watch_list = list(df['tiker'])
     long_list = []
@@ -68,7 +64,6 @@ while True:
     while not f.isMarketOpen():
         #scan the long list of history price, check if any stock in long position
         #if in long position, put it into watch list with 
-
 
         if len(long_list) > 0:
             #print('stock list',my_stock_list)     

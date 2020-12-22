@@ -10,9 +10,6 @@ import concurrent.futures
 import indicators as ind
 
 
-def keyboardInterruptHandler(signal, frame):
-    print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
-    exit(0)
 
 #scan 30 mins price change = (close -open)/open*100
 def buyBy30min(tker):

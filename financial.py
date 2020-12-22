@@ -16,7 +16,8 @@ import math
 import csv
 import re
 
-key = '3711ff28a46fd9f7cbc915ca70a67b30'
+
+key = input('Enter the key:\n')
 
 def round_half_down(n, decimals=0):
     multiplier = 10 ** decimals
