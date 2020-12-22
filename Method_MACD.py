@@ -28,8 +28,9 @@ class MACD:
     def buy(self, stock=None):
         if stock is None:
             stock = self.stock
-        if stock['macdh'].iloc[-1] > 0 and  stock['macdh'].iloc[-2] < 0: 
-            return True
+        if stock['macdh'].iloc[-1] > 0 and  stock['macdh'].iloc[-2] < 0:
+            if ind.up_trend(stock['macdh'],window=5): 
+                return True
         else:
             return False 
 

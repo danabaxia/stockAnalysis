@@ -9,7 +9,7 @@ import datetime
 #This method uses SMA20 as enter long signal
 #boll lower band as buy signal 
 class BOLL_SMA:
-    def __init__(self, tker, boll_period, window,feed, timeFrame):
+    def __init__(self, tker, boll_period, window, feed, timeFrame):
         self.feed = feed
         self.tker = tker
         self.boll_period = boll_period
@@ -33,7 +33,7 @@ class BOLL_SMA:
         #boll limit  
         stock['boll_bb'] = (stock['close'] - stock['boll_lb'])/(stock['boll_ub']-stock['boll_lb'])*100
         stock['boll_band'] = (stock['boll_ub'] - stock['boll_lb'])/stock['close_'+str(self.boll_period)+'_sma']
-        print(stock.tail(5))
+        #print(stock.tail(1))
         
 
         #print(stock['boll'].tail(3))
@@ -62,10 +62,11 @@ class BOLL_SMA:
             stock = self.stock
         if long is None:
             stock_l = self.long
-        if ind.up_trend(stock_l['boll'], window=3):
-           if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
-               if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
-                   return True
+        print(self.tker, stock['boll'].iloc[-1], stock['close'].iloc[-1], stock['boll_lb'].iloc[-1])
+        #if ind.up_trend(stock_l['boll'], window=3):
+        if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
+            if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
+                return True
         else:
             return False
 
@@ -88,7 +89,7 @@ class BOLL_SMA:
         #pass
 
 if __name__ == "__main__":
-    tker = 'SNOW'
+    tker = 'AMD'
     data = ind.load_stock_30min(tker) 
     timeFrame = len(data)
     #data = ind.load_stock_from_to('TDOC','2020-08-01','2020-12-01')

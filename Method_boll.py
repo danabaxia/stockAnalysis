@@ -8,10 +8,9 @@ import datetime
 
 
 class BOLL:
-    def __init__(self, tker, boll_period, window,feed, timeFrame):
+    def __init__(self, tker, boll_period, feed, timeFrame):
         self.feed = feed
         self.boll_period = boll_period
-        self.window = window
         self.timeFrame = timeFrame
         self.stock = self.calulate_stock().tail(timeFrame)
  
@@ -30,7 +29,7 @@ class BOLL:
         #boll limit  
         stock['boll_bb'] = (stock['close'] - stock['boll_lb'])/(stock['boll_ub']-stock['boll_lb'])*100
         stock['boll_band'] = (stock['boll_ub'] - stock['boll_lb'])/stock['close_'+str(self.boll_period)+'_sma']
-        print(stock.tail(5))
+        #print(stock.tail(5))
         
 
         #print(stock['boll'].tail(3))
@@ -62,10 +61,19 @@ class BOLL:
     def lower_lb(self,stock=None):
         if stock is None:
             stock = self.stock
-        if ind.up_trend(stock['boll'], window=3):
-           if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
-               if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
-                   return True
+        if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
+            if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
+                return True
+        else:
+            return False
+
+    def lower_lb_with_ub_trend_up(self,stock=None):
+        if stock is None:
+            stock = self.stock
+        if ind.up_trend(stock['boll_ub'],window=3):
+            if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
+                if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
+                    return True
         else:
             return False
 
@@ -88,20 +96,28 @@ class BOLL:
         #pass
 
 if __name__ == "__main__":
-    tker = 'TSLA'
+    #tker = 'TSLA'
     timeFrame = 200
-    data = ind.load_stock_30min(tker) 
-    #data = ind.load_stock_from_to('TDOC','2020-08-01','2020-12-01')
-    a = BOLL(tker,20, 3, data, timeFrame)
-    test = BackTesting(tker, a.stock, a.buy, a.sell)
-    test.run()
-    test.get_portfolio()
-    test.get_portfolio_ref()
-    print(test.get_transaction_log())
+    i = 0
+    for tker in ind.get_all_tickers():
+        try:
+            data = ind.load_stock(tker,200) 
+            a = BOLL(tker,21, data, timeFrame)
+            test = BackTesting(tker, a.stock, a.lower_lb_with_ub_trend_up, a.sell)
+            test.run()
+            #test.get_portfolio()
+            #test.get_portfolio_ref()
+            print(tker)
+            print(test.get_transaction_log())
+            i  += 1
+        except Exception as exc:
+            print(tker,'error: ',exc)
+        if i > 20:
+            break
     #test.get_bid_result(10)
-    d = plotter()
-    df = a.stock.copy()
-    record = test.get_transaction_log().copy()
-    d.plot_min(df, record, tker)
+    #d = plotter()
+    #df = a.stock.copy()
+    #record = test.get_transaction_log().copy()
+    #d.plot_min(df, record, tker)
     #plt.plot(datetimes, df['close'])
     #plt.show()

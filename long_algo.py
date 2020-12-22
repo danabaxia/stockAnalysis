@@ -5,6 +5,7 @@ import stockstats
 import indicators as ind
 import matplotlib.pyplot as plt
 import datetime
+from Method_MACD import MACD 
 
 #This method uses SMA20 as enter long signal
 #boll lower band as buy signal 
@@ -19,9 +20,9 @@ class Long_algo:
     def calculate_stock(self):
         stock = stockstats.StockDataFrame().retype(self.feed)
         stock['close_20_sma']
-        #print(stock['boll'].tail(3))
-        #print(ind.up_trend(stock['boll'],window=2))
-        #print(ind.down_trend(stock['boll'],window=1))
+        stock['boll'] 
+        stock['boll_ub']
+        stock['boll_lb']
 
         return stock.round(2)
         
@@ -30,19 +31,10 @@ class Long_algo:
         if stock is None:
             stock = self.stock
         #lower band down trend, mid band up, upper band up
-        if self.sma(stock):
-            return True
-        else:
-            return False 
-
-    def sma(self,stock=None):
-        if stock is None:
-            stock = self.stock
-        if ind.up_trend(stock['close_20_sma'],window=3):
+        if self.boll_lb(stock):
             return True
         else:
             return False
-
 
     def sell(self, stock=None):
         if stock is None:
@@ -53,11 +45,32 @@ class Long_algo:
         #    return False
         #pass
 
+    def sma_single(self,stock=None,period=20):
+        if stock is None:
+            stock = self.stock
+        if ind.up_trend(stock['close_' + str(period) + '_sma'],window=3):
+            return True
+        else:
+            return False
+
+    def boll_lb(self, stock=None):
+        if stock is None:
+            stock = self.stock
+        print(self.tker, 'boll', stock['boll'].iloc[-1], 'close',stock['close'].iloc[-1], 'boll_lb', stock['boll_lb'].iloc[-1])
+        if stock['close'].iloc[-2] <  stock['boll_lb'].iloc[-2]:
+            if stock['close'].iloc[-1] >= stock['boll_lb'].iloc[-1]:
+                return True
+        else:
+            return False
+
+
+
+
 if __name__ == "__main__":
-    tker = 'SNOW'
+    tker = 'V'
     data = ind.load_stock(tker,300) 
     timeFrame = 100
-    #data = ind.load_stock_from_to('TDOC','2020-08-01','2020-12-01')
+    #data = ind.load_stock_from_to('TDOC','2020-08-01','2020-12-01') 
     a = Long_algo(tker,data, timeFrame)
     test = BackTesting(tker, a.stock, a.buy, a.sell)
     test.run()
@@ -68,4 +81,4 @@ if __name__ == "__main__":
     d = plotter()
     df = a.stock.copy()
     record = test.get_transaction_log().copy()
-    #d.plot_min(df, record, tker)
+    d.plot_result(df, record)

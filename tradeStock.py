@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 import time 
 import threading
 
+def login():
+    account = input('Enter account:\n')
+    password = input('Enter password:\n')
+    r.login(account,password)
+
 #get all hodling stocks with holding values 
 def getMyStockListwithPrice():
     stock_list = {}
@@ -74,3 +79,8 @@ def getTotalInvest():
 
 def getEquityCap(tker):
     getTotalEquity() 
+
+
+if __name__ == "__main__":
+    login()
+    

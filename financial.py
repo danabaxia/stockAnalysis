@@ -6,11 +6,6 @@ Version 1.0
 
 Author: Jacob Han
 
-List of Included Functions:
-1)get_financial_stmts(frequency, statement_type)
-  - frequency can be either 'annual' or 'quarter'
-  - statement can be 'income', 'balance'
-
 """
 import plotly.graph_objects as go
 import requests
@@ -19,6 +14,7 @@ import signal
 from datetime import datetime, timedelta, date
 import math
 import csv
+import re
 
 key = '3711ff28a46fd9f7cbc915ca70a67b30'
 
@@ -428,8 +424,8 @@ def saveListToCSV(data,header=None,isHeader=False):
         csv_writer.writerow(element)
     f.close()
 
-def readStockFromCSV():
-    with open('stock_list.csv', newline='') as f:
+def readStockFromCSV(file):
+    with open(file, newline='') as f:
         reader = csv.reader(f)
         data = list(reader)
     return data
@@ -441,3 +437,29 @@ def requestStockRate(tker):
         return r.json()[0]['ratingScore']
     except Exception as exc:
         print('request stock rate error:', exc)
+
+
+def read_labels(file):
+    t = readStockFromCSV(file)
+    return [item for sublist in t for item in sublist]  #faltten the list of lists
+
+def read_sectors(file):
+    t = readStockFromCSV(file)
+    return [item for sublist in t for item in sublist]  #faltten the list of lists
+
+def read_stocks(file):
+    return pd.read_csv(file)
+
+if __name__ == "__main__":
+    #print(read_labels('stocks/labels.csv'))
+    #print(read_sectors('stocks/sectors.csv'))
+    df = read_stocks('stocks/stocks.csv')
+    df['label'] = df['label'].str.findall(r'#(\w+)') #parse hashtag to list of tags 
+    #print(df['label'].str.findall(r'#(\w+)'))
+    print(df['label'])
+    labels = df['label'].explode()
+    indexes = labels[labels=='banking'].index
+    print(df['tiker'].iloc[indexes])
+    print(list(df['tiker']))
+    
+    

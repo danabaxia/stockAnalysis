@@ -178,7 +178,7 @@ class BackTesting(ABC):
         p.plot_profit(self.__profit)
 
     def get_portfolio_ref(self):
-        print('Info: Stock Price change until today: ', 
+        print('[Info] Stock Price change until today: ', 
                (self.__feed['close'].iloc[-1] - self.__feed['close'].iloc[0])/self.__feed['close'].iloc[0]*100)
     
     
@@ -245,6 +245,19 @@ class plotter():
         fig.suptitle(label)
         plt.legend()
         plt.show()
+
+    def plot_result(self, df, record): 
+        fig, ax = plt.subplots(figsize=(12,4))
+        ax.plot(df['close'])
+        x = record['Time'].loc[record['transaction'] == 'Buy']
+        y = df['close'].loc[x]
+        ax.scatter(x, y, label = 'buy', marker = '^', color = 'green')
+        x = record['Time'].loc[record['transaction'] == 'Sell']
+        y = df['close'].loc[x]
+        ax.scatter(x, y, label = 'sell', marker = 'v', color='red')
+        plt.legend()
+        plt.show()
+
     
 
     def buy(self):

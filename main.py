@@ -10,20 +10,14 @@ import time
 import matplotlib.pyplot as plt
 import indicators as ind
 from Method_kd import KD
-from long_algo import Long_algo as la 
+from long_algo import Long_algo 
 from Method_BOLL_SMA import BOLL_SMA
 
 
 #user input robinhood account and password
 #you may be asked to provide text message verify code
-account = input('Enter account:\n')
-password = input('Enter password:\n')
-
-r.login(account,password)
-def keyboardInterruptHandler(signal, frame):
-    print("KeyboardInterrupt (ID: {}) has been caught. Cleaning up...".format(signal))
-    exit(0)
-
+#t.login()
+r.login('danabaxia@gmail.com','Hjb1314!@#$')
 def algo_buy(tker):
     try:
         data = ind.load_stock_30min(tker)
@@ -42,7 +36,7 @@ def algo_buy_test(tker):
     try:
         data = ind.load_stock_30min(tker)
         timeFrame = 20
-        bar = BOLL_SMA(tker,data,timeFrame)
+        bar = BOLL_SMA(tker,20, 3, data,timeFrame)
         if bar.buy():
             print(tker,'is to buy')
             return tker
@@ -53,26 +47,33 @@ def algo_buy_test(tker):
 
 while True:
     #watch_list = ['PENN','MT','CRM','NIO']
-    """watch_list  = ['SQ', 'AAPL','BABA','PYPL','LIT','TAN','ARKK','AGNC','EVRI','NIO','XPEV',
-                   'TSLA','TAN','RVLV','ZM','LIT','NVDA','SUN']"""
-    watch_list = ['TAN','AMD','AAPL','UPS','ARKG','TSLA','NIO','BABA','LIT']
+    #watch_list = ['TAN','AMD','AAPL','UPS','ARKG','TSLA','NIO','BABA','LIT',
+    #              'GOOGL', 'AMZN','DKNG','FB','NIO','ARKK','SQ','PYPL','NVDA',
+    #              'TDOC','MSFT','TQQQ']
+    df = f.read_stocks('stocks/stocks.csv')
+    watch_list = list(df['tiker'])
     long_list = []
+    buy_list = []
     for tk in watch_list:
-        data = ind.load_stock(tk, 200)
-        timeFrame = 20
-        a = la(tk,data,timeFrame)
-        if a.buy():
-            long_list.append(tk)
-    print('[Info]:Long_list:',long_list)
+        try:
+            data = ind.load_stock(tk, 200)
+            timeFrame = 20
+            a = Long_algo(tk,data,timeFrame)
+            if a.buy():
+                print('long position:', tk)
+                long_list.append(tk)
+        except Exception as exc: 
+            print('error:', exc)
 
-    while f.isMarketOpen():
+    while not f.isMarketOpen():
         #scan the long list of history price, check if any stock in long position
         #if in long position, put it into watch list with 
 
 
         if len(long_list) > 0:
-            #print('stock list',my_stock_list)
+            #print('stock list',my_stock_list)     
             print('[Info]:Long_list:',long_list)
+            print('[Info]:buy_list:', buy_list)
             #sell loss
             """try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor: 
@@ -98,15 +99,17 @@ while True:
             #This section is buy action
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor: 
-                    results = list(map(lambda x: executor.submit(algo_buy_test,x), watch_list))
+                    results = list(map(lambda x: executor.submit(algo_buy_test,x), long_list))
                     for result in concurrent.futures.as_completed(results):
-                        if result.result() in watch_list:
+                        if result.result() in long_list:
                             long_list.remove(result.result())
+                            buy_list.append(result.result())
             except Exception as exc:
                     print('error: ',exc)
             
             
-            time.sleep(60)
+        time.sleep(3)
+        print('in the market loop')
 
     print('still alive')
     time.sleep(60)
