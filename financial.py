@@ -451,6 +451,37 @@ def read_sectors(file):
 def read_stocks(file):
     return pd.read_csv(file)
 
+
+#######
+#get cypto historical prices 
+def request_CyptoPrice_hour():
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/1hour/BTCUSD?apikey=' + key)
+        return r.json()
+    except Exception as exc:
+        print('error: ',exc)
+
+def request_CyptoPrice_30min():
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-chart/30min/BTCUSD?apikey=' + key)
+        return r.json()
+    except Exception as exc:
+        print('error: ',exc)
+
+def request_CyptoPrice_day():
+    try:
+        r = requests.get('https://financialmodelingprep.com/api/v3/historical-price-full/BTCUSD?apikey=' + key)
+        return r.json()['historical']
+    except Exception as exc:
+        print('error: ',exc)
+
+def get_cypto_price():
+        try:
+            r = requests.get('https://financialmodelingprep.com/api/v3/quote/BTCUSD?apikey=' + key)
+            return r.json()[0]['price']
+        except Exception as exc:
+            print('error: ',exc)
+
 if __name__ == "__main__":
     #print(read_labels('stocks/labels.csv'))
     #print(read_sectors('stocks/sectors.csv'))

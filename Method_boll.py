@@ -8,11 +8,10 @@ import datetime
 
 
 class BOLL:
-    def __init__(self, tker, boll_period, feed, timeFrame):
+    def __init__(self, boll_period, feed):
         self.feed = feed
         self.boll_period = boll_period
-        self.timeFrame = timeFrame
-        self.stock = self.calulate_stock().tail(timeFrame)
+        self.stock = self.calulate_stock()
  
 
     def calulate_stock(self):
@@ -28,7 +27,7 @@ class BOLL:
         stock['close_30_sma']
         #boll limit  
         stock['boll_bb'] = (stock['close'] - stock['boll_lb'])/(stock['boll_ub']-stock['boll_lb'])*100
-        stock['boll_band'] = (stock['boll_ub'] - stock['boll_lb'])/stock['close_'+str(self.boll_period)+'_sma']
+        stock['boll_band'] = (stock['boll_ub'] - stock['boll_lb'])/stock['boll']*100
         #print(stock.tail(5))
         
 
@@ -47,7 +46,13 @@ class BOLL:
         else:
             return False 
 
-    
+    def squeze(self,stock=None):
+        if stock is None:
+            stock = self.stock
+        if ind.down_to_up_trend(stock['boll_band']):
+            return True
+        else:
+            return False
 
     def stradedy_bb(self,stock=None):
         if stock is None:

@@ -131,6 +131,16 @@ def checkCap(tker, cap):
             print('no more funds to invest')
             return False
 
+def checkCap_cypto(cap):
+    equity = t.get_my_cypto_value()
+    print('[Info] current invest ', equity)
+    if equity < cap:
+        print('invest under the cap') 
+        return True
+    else: 
+        print('invest exceeds the cap') 
+        return False
+
 
 def logRecord(tker,action,amount):
     now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -138,10 +148,6 @@ def logRecord(tker,action,amount):
         fieldnames = ['time', 'tiker','action','amount']
         writer = csv.writer(csvfile)
         writer.writerow([now,tker, action, amount])
-
-
-
-
 
 def buyStock(tker,value):
     flag = True
@@ -253,4 +259,83 @@ def method1(my_stock_list,watch_list,candidate_list):
     return my_stock_list,watch_list
 
 
-   
+#cypto transaction 
+def buyBTC(tker, value):
+    flag = True
+    buy = True
+    count = 0
+    while flag and count < 10:
+        if buy:
+            result = r.orders.order_buy_crypto_by_price(tker,value,priceType='mark_price',timeInForce='gtc')
+            print(result['id'])
+        time.sleep(15)
+        order = r.get_crypto_order_info(result['id'])
+        print(order)
+        print(order['state'])
+        if order['state'] == 'filled':
+            flag = False
+            buy = False
+            price = order['rounded_executed_notional']
+            print('bought ',price)
+            logRecord_BTC(tker,'buy',price)
+            return 'BUY'
+        elif order['state'] == 'cancelled':
+            flag = True
+            buy = True
+            print('order has been cancelled')
+        else: 
+            flag = True
+            buy = False
+            print('checking state later')
+        count +=1
+        print('count',count)
+
+def sellBTC(tker,value):
+    flag = True
+    buy = True
+    count = 0
+    equity = t.get_my_cypto_value()
+    if value > equity: # if equity is less than sell amount 
+        value = equity 
+    while flag and count < 10:
+        if buy:
+            result = r.orders.order_sell_crypto_by_price(tker,value,priceType='ask_price',timeInForce='gtc')
+            print(result['id'])
+        time.sleep(15)
+        order = r.orders.get_stock_order_info(result['id'])
+        print(order['state'])
+        if order['state'] == 'filled':
+            flag = False
+            price = order['rounded_executed_notional']
+            print('sold ',price)
+            logRecord_BTC(tker,'sell',price)
+            return 'SELL'
+        elif order['state'] == 'cancelled':
+            buy = True
+            print('order has been cancelled')
+        else: 
+            buy = False
+            print('checking state later')
+        count +=1
+        print('count',count)
+
+def logRecord_BTC(tker,action,amount):
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    List = [now, tker, action, amount]
+    with open('log/log_BTC.csv', 'a') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(List)
+
+if __name__ == "__main__":
+    #t.login()
+    #result = r.orders.order_sell_crypto_by_price('BTC', 10, priceType='bid_price',timeInForce='gtc')
+    #id = result['id']
+    #print(result)
+    #print(id)
+    #result = r.get_crypto_order_info('97e9ac10-b5f5-490b-a3c1-27b9ed8de2a4')
+    #status = result['rounded_executed_notional']
+    #print(result)
+    #print(status)
+    tker = 'BTC'
+    price = 50
+    logRecord_BTC(tker,'buy',price)

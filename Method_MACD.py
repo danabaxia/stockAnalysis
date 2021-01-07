@@ -3,14 +3,12 @@ import stockstats
 import indicators as ind
 
 class MACD:
-    def __init__(self, tker, fast, slow, signal, rsi, feed, timeFrame):
+    def __init__(self, tker, fast, slow, signal,feed):
         self.feed = feed
         self.fast = fast 
         self.slow = slow
         self.signal = signal
-        self.timeFrame = timeFrame
-        self.stock = self.calulate_stock().tail(timeFrame) 
-        self.rsi = rsi
+        self.stock = self.calulate_stock()
 
     def calulate_stock(self):
         stockstats.StockDataFrame.MACD_EMA_SHORT = self.fast
@@ -21,29 +19,22 @@ class MACD:
         #                   slowperiod=self.slow,signalperiod=self.signal)[2]
         #stock['macdh_b']=ind.get_binary(macdh) #macdh binary 
         stock['macdh']
-        print(stock['macdh'])
+        stock['macdh_b'] = ind.get_binary(stock['macdh'])
         #print(stock.head(50))
         return stock.round(2)
 
-    def buy(self, stock=None):
+    def up_cross(self, stock=None):
         if stock is None:
             stock = self.stock
-        if stock['macdh'].iloc[-1] > 0 and  stock['macdh'].iloc[-2] < 0:
-            if ind.up_trend(stock['macdh'],window=5): 
-                return True
-        else:
-            return False 
+        if stock['macdh'].iloc[-1] > 0 and stock['macdh'].iloc[-2] < 0:
+            return True
+    
+    def down_cross(self, stock=None):
+        if stock is None:
+            stock = self.stock
+        if stock['macdh'].iloc[-1] < 0 and stock['macdh'].iloc[-2] > 0:
+            return True
 
-    def sell(self, stock=None):
-        if stock is None:
-            stock = self.stock
-        #print('close',stock['close'].iloc[-1], 'sma30', stock['close_30_sma'].iloc[-1])
-        #if  stock['rsi'].iloc[-1] > 70 and stock['rsi'].iloc[-2] > stock['rsi'].iloc[-1]:
-        #if stock['rsi'].iloc[-1] > self.rsi: 
-        #    return True
-        #else:
-        #    return False
-        pass
 
 
 if __name__ == "__main__":

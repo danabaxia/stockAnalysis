@@ -61,7 +61,7 @@ while True:
         except Exception as exc: 
             print('error:', exc)
 
-    while not f.isMarketOpen():
+    while f.isMarketOpen():
         #scan the long list of history price, check if any stock in long position
         #if in long position, put it into watch list with 
 

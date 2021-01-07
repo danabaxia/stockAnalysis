@@ -8,18 +8,21 @@ import indicators as ind
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.dates as mdates
+import csv
 
 #calculate buy and sell info, returns 
 class BackTesting(ABC):
 
-    def __init__(self, tker, feed, buy, sell, cash=10000):
+    def __init__(self, tker, feed, buy, sell, cash=10000,debug=0):
         self.__tker = tker
         self.__feed = feed
         self.method_buy = buy 
         self.method_sell = sell 
-        self.__timeFrame = list(feed.index)
+        self.debug = debug
         self.__buy = []
         self.__sell = []
+        self.buy_index = []
+        self.sell_index = []
         self.__result = []
         self.__cash = cash
         self.__cash_ini = cash
@@ -29,26 +32,43 @@ class BackTesting(ABC):
         self.__bars = []
         self.__daily_profit = None
         self.__profit = None
+        self.long = True
+        self.stop_loss = 0
+        self.log= pd.DataFrame(columns=['Time', 'transaction', 'share', 'price', 'cash', 'holdings'])
   
     def run(self):
         stock_n = None
         row_list = []
+        index_list = []
         i = 0
         for index, row in self.__feed.iterrows():
             row_list.append(list(row))
-            stock_n = pd.DataFrame(row_list,columns=self.__feed.columns)
+            index_list.append(index)
+            stock_n = pd.DataFrame(row_list,columns=self.__feed.columns, index=index_list)
             if i > 5:
-                if self.method_buy(stock_n):
-                    self.__buy.append(index) 
-                if self.method_sell(stock_n):
-                    self.__sell.append(index)
+                if self.long is True: 
+                    if not self.method_buy(stock_n) is None: #long position 
+                        self.__buy.append(index)
+                        self.buy_index.append(i)
+                        result = self.method_buy(stock_n)
+                        self.long = result[0]
+                        self.stop_loss = result[1]
+                        share = result[2]
+                        self.market_buy(index,share,row['close'])
+                elif self.long is False: 
+                    if not self.method_sell(stock_n) is None: # short position
+                        self.__sell.append(index)
+                        self.sell_index.append(i)
+                        self.long, _, share, _ = self.method_sell(stock_n)
+                        self.market_sell(index,share,row['close'])
+                        
             i +=1
         #execute orders based on time marks 
-        self.get_returns()
+        #self.get_returns()
         #create transaction log
         self.log_transaction()
         #calulate profit 
-        self.get_returns_trend()
+        #self.get_returns_trend()
 
     def get_buy(self):
         return self.__buy
@@ -56,20 +76,14 @@ class BackTesting(ABC):
     def get_sell(self):
         return self.__sell
 
+    def get_buy_index(self):
+        return self.buy_index
+
+    def get_sell_index(self):
+        return self.sell_index
+
     def get_returns(self):
-        #print(self.__buy)
-        for t in self.__timeFrame:
-            if t in self.__buy:
-                price = self.__feed.loc[t]['close']
-                #print('buy',price)
-                self.market_buy(t, price)
-            elif t in self.__sell:
-                price = self.__feed.loc[t]['close']
-                #print('sell', price)
-                #print('price', price)
-                self.market_sell(t, price)
-            else:
-                next 
+         return round(self.__share*self.__feed['close'].iloc[-1] + self.__cash - self.__cash_ini, 2)
 
     
     def get_portfolio(self):
@@ -79,27 +93,30 @@ class BackTesting(ABC):
         return (self.__portfolio - self.__cash_ini)/self.__cash_ini*100
 
         
-   
-    def market_buy(self, time, price):
-        share = int(self.__cash*0.1/price)
+    
+    def market_buy(self, time, share, price):
+        #share = int(self.__cash*0.1/price)
+        assert (price < self.__cash),  "You are broken, Game over!"
         if share > 0:
             self.__share += share
             self.__cash -= price*share  
-            bar = [time,'Buy', share, price, self.__cash, self.__share]
+            bar = [time, 'Buy', share, price, self.__cash, self.__share,
+                   self.__share*price + self.__cash]
             self.__bars.append(bar)
     
-    def market_sell(self, time, price):
-        share = int(self.__share*0.2)
+    def market_sell(self, time, share, price):
+        #share = int(self.__share*0.2)
         if share > 0: # and share < self.__share:
             self.__share -= share
             self.__cash += price*share  
-            bar = [time,'Sell', share, price, self.__cash, self.__share]
+            bar = [time, 'Sell', share, price, self.__cash, self.__share, 
+                   self.__share*price + self.__cash]
             self.__bars.append(bar)
 
     #log table
     #time       transaction    share     price     cash   holding_shares  
     def log_transaction(self):       
-        columns = ['Time', 'transaction', 'share', 'price', 'cash', 'holdings']
+        columns = ['Time', 'transaction', 'share', 'price', 'cash', 'holdings','total invest']
         self.__transaction = pd.DataFrame(self.__bars, columns=columns)
 
     
@@ -140,8 +157,8 @@ class BackTesting(ABC):
 
 
     #calculate daily
-    def get_returns_trend(self):
-        dates = np.array(self.__timeFrame)  
+    """def get_returns_trend(self):
+        dates = np.array(self.__feed[self.__timeFrame:].index)  
         price = self.__feed['close']
         cash = np.zeros(len(dates), dtype= float)
         cash.fill(self.__cash_ini)
@@ -171,7 +188,7 @@ class BackTesting(ABC):
         trend = list(zip(dates,price, cash, stock, values, profit))
         returns = pd.DataFrame(trend, columns = ['date', 'price','cash','holding','values','profit'])
         #print(returns)
-        self.__profit = profit
+        self.__profit = profit"""
 
     def plot_profit(self):
         p = plotter()
@@ -181,7 +198,105 @@ class BackTesting(ABC):
         print('[Info] Stock Price change until today: ', 
                (self.__feed['close'].iloc[-1] - self.__feed['close'].iloc[0])/self.__feed['close'].iloc[0]*100)
     
+
+#calculate buy and sell info, returns 
+class ForwardTesting(ABC):
+
+    def __init__(self, tker, feed, buy, sell, cash=10000,debug=0):
+        self.__tker = tker
+        self.__feed = feed
+        self.method_buy = buy 
+        self.method_sell = sell 
+        self.debug = debug
+        self.__buy = []
+        self.__sell = []
+        self.__result = []
+        self.__cash = cash
+        self.cash_ini = cash
+        self.__portfolio = 0 
+        self.__share = 0
+        self.__transaction = pd.DataFrame()
+        self.long = True
+
+  
+    def run(self):
+        self.update_position()
+        stock = self.__feed
+        if self.long is True: 
+            if not self.method_buy(stock) is None: #long position 
+                result = self.method_buy(stock)
+                self.long = result[0]
+                price = result[1]
+                share = result[2]
+                index = result[3]
+                self.market_buy(index,share,price)
+        elif self.long is False: 
+            if not self.method_sell(stock) is None: #short position
+                result = self.method_sell(stock)
+                self.long = result[0]
+                price = result[1]
+                share = result[2]
+                index = result[3]
+                self.market_sell(index,share,price)
+
+        self.get_returns()
+        
+        print('[Info]long', self.long)
+
+    def update_position(self):
+        transaction = pd.read_csv('log/forward_test.csv')
+        if len(transaction) > 0:
+            if transaction['transaction'].iloc[-1] == 'Buy':
+                self.long = False
+            elif transaction['transaction'].iloc[-1] == 'Sell':
+                self.long = True
+
+                        
+
+
+    def get_returns(self):
+        transaction = pd.read_csv('log/forward_test.csv')
+        if len(transaction) == 0:
+            total = self.cash_ini
+        else:
+            share = transaction['share'].iloc[-1]
+            cash = transaction['cash'].iloc[-1]
+            price = self.__feed['close'].iloc[-1]
+            total = cash + price*share 
+            print('[Info] Transaction Log')
+            print(transaction)
+        print('[Info]Total', total)
+        return total
+        
     
+    def market_buy(self, time, share, price):
+        #share = int(self.__cash*0.1/price)
+        assert (price < self.__cash),  "You are broken, Game over!"
+        if share > 0:
+            self.__share += share
+            self.__cash -= price*share  
+            bar = [time, 'Buy', share, price, self.__cash, self.__share,
+                   self.__share*price + self.__cash]
+            self.log_transaction(bar)
+    
+    def market_sell(self, time, share, price):
+        #share = int(self.__share*0.2)
+        if share > 0: # and share < self.__share:
+            self.__share -= share
+            self.__cash += price*share  
+            bar = [time, 'Sell', share, price, self.__cash, self.__share, 
+                   self.__share*price + self.__cash]
+            self.log_transaction(bar)
+
+    #log table
+    #time       transaction    share     price     cash   holding_shares  
+    def log_transaction(self,bar):       
+        with open('log/forward_test.csv', 'a') as f:
+            write = csv.writer(f)
+            write.writerow(bar)
+
+
+
 
 #draw price trend and mark buy and sell points
 class plotter():

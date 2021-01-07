@@ -80,7 +80,16 @@ def getTotalInvest():
 def getEquityCap(tker):
     getTotalEquity() 
 
+#cypto
+def get_my_cypto_value():
+    data = r.get_crypto_positions()
+    #print(data)
+    qt = float(data[0]['quantity'])
+    return round(qt*f.get_cypto_price(),2)
+
+
 
 if __name__ == "__main__":
     login()
+    print(get_my_cypto_value())
     

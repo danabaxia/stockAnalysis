@@ -52,11 +52,8 @@ def clean_stocks():
 
 def get_all_tickers():
     tkers = []
-    data = pd.read_csv('stock_list_clean.csv')
-    for index, row in data.iterrows():
-        if row['price'] > 5: #get rid of penny stock
-            tkers.append(row['symbol'])
-    return tkers
+    data = pd.read_csv('stockS/stocks.csv')
+    return data
 
 
 #########################
@@ -322,7 +319,31 @@ def down_trend(data, window=1):
     else:
         return False
 
-def up_to_down_trend(data, left_window=2,right_window=1):
+def compare_bigger(a, b, window=1):
+    dif_ini = a - b 
+    dif = np.where(dif_ini> 0, 1, dif_ini)
+    w = [1]* window
+    if list(dif[-window:]) == w:
+        return True
+    else:
+        return False
+
+def long_line(s, m, l,window=1):
+    if up_trend(s,window=window):
+        if up_trend(m,window=window):
+            if up_trend(l,window=window):
+                if compare_bigger(s,m):
+                    if compare_bigger(m,l):
+                        return True
+    return False
+
+def three_line(s, m, l, window=1):
+    if compare_bigger(s, m, window=window):
+        if compare_bigger(m, l, window=window):
+            return True
+    return False
+
+def is_peak(data, left_window=2,right_window=1):
     assert left_window >= 0, 'windown size must be >= 0'
     assert right_window >= 0, 'windown size must be >= 0'
     b = get_binary_angle(data)
@@ -334,7 +355,7 @@ def up_to_down_trend(data, left_window=2,right_window=1):
     else:
         return False
 
-def down_to_up_trend(data, left_window=2, right_window=1):
+def is_bottom(data, left_window=2, right_window=1):
     assert left_window >= 0, 'windown size must be >= 0'
     assert right_window >= 0, 'windown size must be >= 0'
     b = get_binary_angle(data)
@@ -345,9 +366,41 @@ def down_to_up_trend(data, left_window=2, right_window=1):
         return True
     else:
         return False
-         
 
 
+def find_bottom(data, left_window=2, right_window=1):
+    assert left_window >= 0, 'windown size must be >= 0'
+    assert right_window >= 0, 'windown size must be >= 0'
+    b = get_binary_angle(data)
+    #print(b)
+    w = [0]*left_window + [1]*right_window
+    #print(w)
+    index = []
+    value = []
+    for i in range(len(b)):
+        d = list(b[i:left_window+right_window + i])
+        #print(d)
+        if d == w:
+            index.append(i+1)
+            value.append(data[i+1]) 
+    return index,value
+
+def find_peak(data, left_window=2, right_window=1):
+    assert left_window >= 0, 'windown size must be >= 0'
+    assert right_window >= 0, 'windown size must be >= 0'
+    b = get_binary_angle(data)
+    #print(b)
+    w = [1]*left_window + [0]*right_window
+    #print(w)
+    index = []
+    value = []
+    for i in range(len(b)):
+        d = list(b[i:left_window+right_window + i])
+        #print(d)
+        if d == w:
+            index.append(i+1)
+            value.append(data[i+1]) 
+    return index,value
 
 #generator combinatons 
 def parameteras_generator(*arg):
@@ -366,9 +419,44 @@ def parameteras_generator(*arg):
     
     return itertools.product(*output)
 
+def load_cypto_hour_price():
+    X = f.request_CyptoPrice_hour()
+    Data = pd.DataFrame(X)
+    Data = pd.concat([Data['date'][::-1],Data['open'][::-1],
+                      Data['high'][::-1],Data['low'][::-1],
+                      Data['close'][::-1],Data['volume'][::-1]]
+                      ,axis=1)
+    Data.columns = ['date','open','high','low','close','volume']
+    Data = Data.reset_index(drop=True) #inverse the index number
+    return Data
+
+def load_cypto_30min_price():
+    X = f.request_CyptoPrice_30min()
+    Data = pd.DataFrame(X)
+    Data = pd.concat([Data['date'][::-1],Data['open'][::-1],
+                      Data['high'][::-1],Data['low'][::-1],
+                      Data['close'][::-1],Data['volume'][::-1]]
+                      ,axis=1)
+    Data.columns = ['date','open','high','low','close','volume']
+    Data = Data.reset_index(drop=True) #inverse the index number
+    return Data
+
+def load_cypto_day_price():
+    X = f.request_CyptoPrice_day()
+    Data = pd.DataFrame(X)
+    Data = pd.concat([Data['date'][::-1],Data['open'][::-1],
+                      Data['high'][::-1],Data['low'][::-1],
+                      Data['close'][::-1],Data['volume'][::-1]]
+                      ,axis=1)
+    Data.columns = ['date','open','high','low','close','volume']
+    Data = Data.reset_index(drop=True) #inverse the index number
+    return Data
+
 
 if __name__ == "__main__":
-    data = pd.DataFrame([5,2,1,0.5,5],columns=['A'])
-    print(down_to_up_trend(data['A']))
-    print(up_to_down_trend(data['A']))
+    tickers = get_all_tickers()
+    for tker in tickers['tiker']:
+        print(tker)
+
+
 
