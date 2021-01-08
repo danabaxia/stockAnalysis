@@ -11,6 +11,7 @@ def login():
     password = input('Enter password:\n')
     r.login(account,password)
 
+
 #get all hodling stocks with holding values 
 def getMyStockListwithPrice():
     stock_list = {}

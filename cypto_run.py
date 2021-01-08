@@ -4,6 +4,7 @@ import robin_stocks as r
 import financial as f 
 import trading_algorithms as ta
 import numpy as np
+import pandas as pd
 import signal
 import concurrent.futures 
 import time
@@ -27,14 +28,12 @@ def algo_trade(tker, data):
         time = bar.get_stock().index[-1]
         print(time)
         equity = t.get_my_cypto_value()
-        print('[Info]My invest equity ', equity)
-        #print(bar.get_stock().tail(3))
-        print('\n')
-        cap = 300
-        empty = 30
+        cash = pd.read_csv('log/log_BTC.csv')['Cash'].iloc[-1]
+        print('[Info]Invest Equity ', equity)
+        print('[Info]Buy power ', cash)
         buy = 50
         sell = 50
-        if equity < cap and bar.buy():
+        if cash > buy and bar.buy():
             print('[Info]buy triggered!')
             return ta.buyBTC(tker, buy)
         elif equity > sell and bar.sell():    
