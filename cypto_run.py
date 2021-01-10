@@ -31,7 +31,7 @@ def algo_trade(tker, data):
         cash = pd.read_csv('log/log_BTC.csv')['Cash'].iloc[-1]
         print('[Info]Invest Equity ', equity)
         print('[Info]Buy power ', cash)
-        buy = 50
+        buy = 100
         sell = 50
         if cash > buy and bar.buy():
             print('[Info]buy triggered!')

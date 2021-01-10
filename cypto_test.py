@@ -28,25 +28,39 @@ class method_test_boll:
     def calculate_stock(self):
         stock = stockstats.StockDataFrame.retype(self.feed)
         stock['rsi_14']
+        stock['macdh']
         stock = BOLL(20, stock).stock
-        #print(stock.index)
+        print(stock[['macdh','close']].tail(10))
         return stock.tail(self.timeFrame)
+    
+    #return 1 long 0 hold -1 sell
+    def position(self, stock=None):
+        if stock is None:
+            stock = self.stock
+        return 1
 
     def buy(self, stock=None):
         if stock is None:
             stock = self.stock
-        if stock['boll_ub'].iloc[-1] < stock['close'].iloc[-1] and stock['rsi_14'].iloc[-1] <  80: 
-            self.buy_price = stock['close'].iloc[-1] 
-            result = [False, f.get_cypto_price(), 1, stock.index[-1]] # self.long. stop loss price, buy share,time
-            #print(stock.index[-1])
-            return result
+        if stock['boll_ub'].iloc[-2] > stock['close'].iloc[-2]:
+            if stock['boll_ub'].iloc[-1] < stock['close'].iloc[-1] and stock['rsi_14'].iloc[-1] <  80: 
+                self.buy_price = stock['close'].iloc[-1] 
+                result = [False, f.get_cypto_price(), 1, stock.index[-1]] # self.long. stop loss price, buy share,time
+                return result
+        elif stock['macdh'].iloc[-2] < 0 and stock['macdh'].iloc[-1] > 0: #macd cross 
+                self.buy_price = stock['close'].iloc[-1] 
+                result = [False, f.get_cypto_price(), 1, stock.index[-1]] # self.long. stop loss price, buy share,time
+                return result            
         else:
             return None
 
     def sell(self, stock=None):
         if stock is None:
             stock = self.stock
-        if stock['close'].iloc[-1] < stock['boll'].iloc[-1]: 
+        if stock['close'].iloc[-2] > stock['boll'].iloc[-2]: #boll mind band break 
+            if stock['close'].iloc[-1] < stock['boll'].iloc[-1]: 
+                return [True, f.get_cypto_price(), 1, stock.index[-1]] # self.long , None, sell share, time 
+        elif stock['macdh'].iloc[-2] > 0 and stock['macdh'].iloc[-1] < 0: #macdcross
             return [True, f.get_cypto_price(), 1, stock.index[-1]] # self.long , None, sell share, time 
         else:
             return None
@@ -82,7 +96,7 @@ class method_test_3SMA:
 
 
         print(self.sma_short)
-        #print(stock.tail(5))
+        print(stock.tail(5))
         return stock.tail(self.timeFrame)
 
 
@@ -111,13 +125,13 @@ class method_test_3SMA:
             return None
 
 if __name__ == '__main__':
-    data = ind.load_cypto_day_price()
+    #data = ind.load_cypto_day_price()
     #data = ind.load_cypto_hour_price()
-    #data = ind.load_cypto_30min_price()
+    data = ind.load_cypto_30min_price()
     #data = ind.load_stock('AAPL', 200)
     a = method_test_boll('BCT', data, 200)
-    bct = a.stock.copy()
-    test = BackTesting('BCT',a.stock,a.buy,a.sell,cash=10000000,debug=0)
+    bct = a.stock.copy().tail(50)
+    test = BackTesting('BCT',bct, a.buy, a.sell, a.position, cash=10000000,debug=0)
     test.run()
     print(test.get_transaction_log())
     buy = test.get_buy()

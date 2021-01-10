@@ -13,11 +13,12 @@ import csv
 #calculate buy and sell info, returns 
 class BackTesting(ABC):
 
-    def __init__(self, tker, feed, buy, sell, cash=10000,debug=0):
+    def __init__(self, tker, feed, buy, sell, position, cash=10000,debug=0):
         self.__tker = tker
         self.__feed = feed
         self.method_buy = buy 
         self.method_sell = sell 
+        self.position = position 
         self.debug = debug
         self.__buy = []
         self.__sell = []
@@ -32,7 +33,6 @@ class BackTesting(ABC):
         self.__bars = []
         self.__daily_profit = None
         self.__profit = None
-        self.long = True
         self.stop_loss = 0
         self.log= pd.DataFrame(columns=['Time', 'transaction', 'share', 'price', 'cash', 'holdings'])
   
@@ -45,21 +45,26 @@ class BackTesting(ABC):
             row_list.append(list(row))
             index_list.append(index)
             stock_n = pd.DataFrame(row_list,columns=self.__feed.columns, index=index_list)
+            position = self.position(stock_n)
             if i > 5:
-                if self.long is True: 
-                    if not self.method_buy(stock_n) is None: #long position 
+                if position == 1: #long postion 
+                    if not self.method_buy(stock_n) is None: 
                         self.__buy.append(index)
                         self.buy_index.append(i)
                         result = self.method_buy(stock_n)
-                        self.long = result[0]
                         self.stop_loss = result[1]
                         share = result[2]
                         self.market_buy(index,share,row['close'])
-                elif self.long is False: 
-                    if not self.method_sell(stock_n) is None: # short position
+                    if not self.method_sell(stock_n) is None: 
                         self.__sell.append(index)
                         self.sell_index.append(i)
-                        self.long, _, share, _ = self.method_sell(stock_n)
+                        _, _, share, _ = self.method_sell(stock_n)
+                        self.market_sell(index,share,row['close'])
+                elif position == -1: #long or short 
+                    if not self.method_sell(stock_n) is None: 
+                        self.__sell.append(index)
+                        self.sell_index.append(i)
+                        _, _, share, _ = self.method_sell(stock_n)
                         self.market_sell(index,share,row['close'])
                         
             i +=1

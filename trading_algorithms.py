@@ -279,7 +279,7 @@ def buyBTC(tker, value):
             buy = False
             price = order['rounded_executed_notional']
             print('bought ',price)
-            logRecord_BTC(tker,'buy',price)
+            logRecord_BTC(tker,'BUY',price)
             return 'BUY'
         elif order['state'] == 'cancelled':
             flag = True
@@ -304,7 +304,7 @@ def sellBTC(tker, value):
             print(result)
             if result['state']  == 'filled':
                 price = result['rounded_executed_notional']  
-                logRecord_BTC(tker,'sell',price)
+                logRecord_BTC(tker,'SELL',price)
                 return 'SELL'
             elif result['state'] == 'canceled':
                 r.orders.cancel_crypto_order(order_id)
@@ -326,6 +326,7 @@ def logRecord_BTC(tker,action,amount):
         writer.writerow(List)
 
 if __name__ == "__main__":
+    pass
     #status = result['rounded_executed_notional']
     #print(status)
     #price = 50
