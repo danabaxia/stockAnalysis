@@ -261,7 +261,7 @@ def method1(my_stock_list,watch_list,candidate_list):
 
 
 #cypto transaction 
-def buyBTC(tker, value):
+"""def buyBTC(tker, value):
     flag = True
     buy = True
     count = 0
@@ -272,7 +272,7 @@ def buyBTC(tker, value):
             print(result['id'])
         time.sleep(30)
         order = r.get_crypto_order_info(result['id'])
-        print(order)
+        print('order id:',order)
         print(order['state'])
         if order['state'] == 'filled':
             flag = False
@@ -290,7 +290,29 @@ def buyBTC(tker, value):
             buy = False
             print('checking state later')
         count +=1
-        print('count',count)
+        print('count',count)"""
+
+def buyBTC(tker, value):
+    for i in range(3):
+        result = r.orders.order_buy_crypto_by_price(tker,value,priceType='mark_price',timeInForce='gtc')
+        order_id = result['id']
+        order_state = result['state']
+        print('order_id:', order_id, 'order_state:', order_state)
+        for i in range(9):
+            time.sleep(30)
+            result = r.get_crypto_order_info(order_id)
+            print(order_state)
+            if result['state']  == 'filled':
+                price = float(result['rounded_executed_notional'])  
+                print('order filled with price ', price)
+                logRecord_BTC(tker,'BUY',price)
+                return 'BUY'
+            elif result['state'] == 'canceled':
+                r.orders.cancel_crypto_order(order_id)
+                break
+            elif i == 8:
+                r.orders.cancel_crypto_order(order_id)
+
 
 def sellBTC(tker, value):
     for i in range(3):
@@ -303,7 +325,7 @@ def sellBTC(tker, value):
             result = r.get_crypto_order_info(order_id)
             print(result)
             if result['state']  == 'filled':
-                price = result['rounded_executed_notional']  
+                price = float(result['rounded_executed_notional'])  
                 logRecord_BTC(tker,'SELL',price)
                 return 'SELL'
             elif result['state'] == 'canceled':
@@ -315,7 +337,7 @@ def sellBTC(tker, value):
 def logRecord_BTC(tker,action,amount):
     now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     equity = t.get_my_cypto_value()
-    cash = pd.read_csv('log/log_BTC.csv')['Cash'].iloc[-1]
+    cash = float(pd.read_csv('log/log_BTC.csv')['Cash'].iloc[-1])
     if action is 'SELL':
         cash += amount
     elif action is 'BUY':
@@ -326,14 +348,12 @@ def logRecord_BTC(tker,action,amount):
         writer.writerow(List)
 
 if __name__ == "__main__":
-    pass
     #status = result['rounded_executed_notional']
     #print(status)
     #price = 50
     #result = sellBTC('BTC',5)
-    #result = buyBTC('BTC', 50)
-    #order = r.orders.get_stock_order_info('2c25cb6d-bd7f-45c2-b37e-81666c54f9a7')
-    #print(order)
-    #logRecord_BTC('BTC', 'SELL', 50)
+    t.login()
+    result = buyBTC('BTC', 10)
+
 
     

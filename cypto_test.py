@@ -10,6 +10,7 @@ import time
 import pandas as pd
 import numpy as np
 from scipy.signal import find_peaks
+import talib 
 
 
 #algo:
@@ -124,29 +125,59 @@ class method_test_3SMA:
         else:
             return None
 
+class method_MACD_vol:
+    def __init__(self, tker, feed, timeFrame=200):
+        self.feed = feed
+        self.tker = tker
+        self.timeFrame = timeFrame
+        self.buy_price = 0
+        self.stock = self.calculate_stock()
+        
+    def calculate_stock(self):
+        stock = stockstats.StockDataFrame.retype(self.feed)
+        stock['rsi_14']
+        stock['macdh']
+        return stock.tail(self.timeFrame)
+    
+    #return 1 long 0 hold -1 sell
+    def position(self, stock=None):
+        if stock is None:
+            stock = self.stock
+        return 1
+
+    def buy(self, stock=None):
+        if stock is None:
+            stock = self.stock
+        if stock['macdh'].iloc[-2] < 0 and stock['macdh'].iloc[-1] > 0: #macd cross 
+                self.buy_price = stock['close'].iloc[-1] 
+                result = [False, f.get_cypto_price(), 1, stock.index[-1]] # self.long. stop loss price, buy share,time
+                return result            
+        else:
+            return None
+
+    def sell(self, stock=None):
+        if stock is None:
+            stock = self.stock
+        if stock['macdh'].iloc[-2] > 0 and stock['macdh'].iloc[-1] < 0: #macdcross
+            return [True, f.get_cypto_price(), 1, stock.index[-1]] # self.long , None, sell share, time 
+        else:
+            return None
+
+    def get_stock(self):
+        return self.stock[['close','rsi_14','macdh']]
+
 if __name__ == '__main__':
     #data = ind.load_cypto_day_price()
     #data = ind.load_cypto_hour_price()
-    data = ind.load_cypto_30min_price()
-    #data = ind.load_stock('AAPL', 200)
-    a = method_test_boll('BCT', data, 200)
-    bct = a.stock.copy().tail(50)
-    test = BackTesting('BCT',bct, a.buy, a.sell, a.position, cash=10000000,debug=0)
+    data = ind.load_cypto_day_price()
+    a = method_MACD_vol('BTC', data)
+    test = BackTesting('BTC',a.stock.copy(), a.buy, a.sell, a.position)
     test.run()
     print(test.get_transaction_log())
-    buy = test.get_buy()
-    sell = test.get_sell()
-    print(test.get_returns())
-    """plt.plot(bct['close'])
-    #plt.plot(bct['close_10_sma'])
-    #plt.plot(bct['close_30_sma'])
-    #plt.plot(bct['close_60_sma'])
-    plt.plot(bct['boll'])
-    plt.plot(bct['boll_ub'])
-    plt.plot(bct['boll_lb'])
-    plt.scatter(buy, bct['close'][buy],label = 'buy', marker = '^', color = 'green')
-    plt.scatter(sell, bct['close'][sell],label = 'sell', marker = 'v', color = 'red')
-    plt.show()"""
+    
+
+
+    
 
 
 

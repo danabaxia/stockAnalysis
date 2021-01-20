@@ -13,7 +13,7 @@ import indicators as ind
 from Method_kd import KD
 from long_algo import Long_algo 
 from Method_BOLL_SMA import BOLL_SMA
-from cypto_test import method_test_boll
+from cypto_test import method_MACD_vol
 
 
 
@@ -24,7 +24,7 @@ def algo_trade(tker, data):
         #data = ind.load_cypto_day_price()
         #data = ind.load_cypto_hour_price()
         timeFrame = 10
-        bar = method_test_boll('BTC', data, timeFrame)
+        bar = method_MACD_vol('BTC', data, timeFrame)
         time = bar.get_stock().index[-1]
         print(time)
         equity = t.get_my_cypto_value()
@@ -41,7 +41,7 @@ def algo_trade(tker, data):
             sell_money = 50
             return ta.sellBTC(tker, sell)
         else: 
-            print(bar.stock[['close', 'volume','boll_ub','boll','rsi_14']].tail(3)) 
+            print(bar.stock[['close', 'volume','macdh']].tail(3)) 
     except Exception as exc:
         print('failed to track ', tker,'error:',exc)
 
@@ -51,7 +51,7 @@ t.login()
 clock = None
 while True:
     tker = 'BTC'
-    data = ind.load_cypto_30min_price()
+    data = ind.load_cypto_day_price()
     current_clock = data['date'].iloc[-1]
     print('clock', clock)
     print('current clock', current_clock)
