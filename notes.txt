@@ -1,0 +1,6 @@
+create/update version :
+pip freeze > requirements.txt
+python -m pip install -r requirements.txt
+
+activate vevn:
+. venv/bin/activate
